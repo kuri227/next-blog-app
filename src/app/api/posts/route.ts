@@ -1,15 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
-import { Post } from "@/generated/prisma/client";
 
 export const GET = async (req: NextRequest) => {
   try {
     const posts = await prisma.post.findMany({
-      // ◀ 推論を利用して posts の型を決定
       select: {
         id: true,
         title: true,
         content: true,
+        coverImageURL: true, // ◀ 追加：DB内の画像URLを取得
         createdAt: true,
         categories: {
           select: {

@@ -1,9 +1,11 @@
 "use client";
 import type { Post } from "@/app/_types/Post";
 import dayjs from "dayjs";
-import { twMerge } from "tailwind-merge";
 import DOMPurify from "isomorphic-dompurify";
 import Link from "next/link";
+import Image from "next/image";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCalendarDays } from "@fortawesome/free-solid-svg-icons";
 
 type Props = {
   post: Post;
@@ -12,36 +14,56 @@ type Props = {
 const PostSummary: React.FC<Props> = (props) => {
   const { post } = props;
   const dtFmt = "YYYY-MM-DD";
+
+  // 本文からタグを除去してテキストのみ抽出（抜粋用）
   const safeHTML = DOMPurify.sanitize(post.content, {
-    ALLOWED_TAGS: ["b", "strong", "i", "em", "u", "br"],
+    ALLOWED_TAGS: [],
   });
+
   return (
-    <div className="border border-slate-400 p-3">
-      <div className="flex items-center justify-between">
-        <div>{dayjs(post.createdAt).format(dtFmt)}</div>
-        <div className="flex space-x-1.5">
-          {post.categories.map((category) => (
-            <div
-              key={category.id}
-              className={twMerge(
-                "rounded-md px-2 py-0.5",
-                "text-xs font-bold",
-                "border border-slate-400 text-slate-500",
-              )}
-            >
-              {category.name}
-            </div>
-          ))}
+    <article className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-all hover:shadow-xl">
+      <Link href={`/posts/${post.id}`} className="flex h-full flex-col">
+        {/* カバー画像エリア：DBのURLを使用 */}
+        <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
+          <Image
+            src={post.coverImage.url}
+            alt={post.title}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            priority
+          />
         </div>
-      </div>
-      <Link href={`/posts/${post.id}`}>
-        <div className="mb-1 text-lg font-bold">{post.title}</div>
-        <div
-          className="line-clamp-3"
-          dangerouslySetInnerHTML={{ __html: safeHTML }}
-        />
+
+        {/* コンテンツエリア */}
+        <div className="flex flex-1 flex-col p-5">
+          <div className="mb-3 flex flex-wrap gap-2">
+            {post.categories.map((category) => (
+              <span
+                key={category.id}
+                className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600"
+              >
+                {category.name}
+              </span>
+            ))}
+          </div>
+
+          <h2 className="mb-2 line-clamp-2 text-xl font-bold text-slate-900 transition-colors group-hover:text-blue-600">
+            {post.title}
+          </h2>
+
+          <p className="mb-4 line-clamp-2 flex-1 text-sm text-slate-500">
+            {safeHTML}
+          </p>
+
+          <div className="mt-auto flex items-center text-xs text-slate-400">
+            <FontAwesomeIcon icon={faCalendarDays} className="mr-2" />
+            <time dateTime={post.createdAt}>
+              {dayjs(post.createdAt).format(dtFmt)}
+            </time>
+          </div>
+        </div>
       </Link>
-    </div>
+    </article>
   );
 };
 

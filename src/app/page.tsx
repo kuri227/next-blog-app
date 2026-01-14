@@ -5,10 +5,12 @@ import PostSummary from "@/app/_components/PostSummary";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 
+// APIレスポンスに coverImageURL を追加
 type PostApiResponse = {
   id: string;
   title: string;
   content: string;
+  coverImageURL: string; // ◀ 追加
   createdAt: string;
   categories: {
     category: {
@@ -25,8 +27,7 @@ const Page: React.FC = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const requestUrl = "/api/posts";
-        const response = await fetch(requestUrl, {
+        const response = await fetch("/api/posts", {
           method: "GET",
           cache: "no-store",
         });
@@ -44,10 +45,11 @@ const Page: React.FC = () => {
               id: c.category.id,
               name: c.category.name,
             })),
+            // DBから取得したURLをセット
             coverImage: {
-              url: "https://placehold.jp/400x300.png",
-              width: 400,
-              height: 300,
+              url: post.coverImageURL,
+              width: 1200,
+              height: 630,
             },
           })),
         );
@@ -61,13 +63,16 @@ const Page: React.FC = () => {
   }, []);
 
   if (fetchError) {
-    return <div className="text-red-500">{fetchError}</div>;
+    return <div className="py-10 text-red-500">{fetchError}</div>;
   }
 
   if (!posts) {
     return (
-      <div className="text-gray-500">
-        <FontAwesomeIcon icon={faSpinner} className="mr-1 animate-spin" />
+      <div className="flex justify-center py-20 text-slate-500">
+        <FontAwesomeIcon
+          icon={faSpinner}
+          className="mr-2 animate-spin text-2xl"
+        />
         Loading...
       </div>
     );
@@ -75,8 +80,17 @@ const Page: React.FC = () => {
 
   return (
     <main>
-      <div className="mb-2 text-2xl font-bold">Main</div>
-      <div className="space-y-3">
+      <div className="mb-10 border-b border-slate-200 pb-6">
+        <h1 className="text-3xl font-black text-slate-900 sm:text-4xl">
+          Latest Articles
+        </h1>
+        <p className="mt-2 font-medium text-slate-500 italic">
+          最新の技術知見とニュースをお届けします
+        </p>
+      </div>
+
+      {/* スマホ1列、中型2列、大型3列のレスポンシブグリッド */}
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
         {posts.map((post) => (
           <PostSummary key={post.id} post={post} />
         ))}

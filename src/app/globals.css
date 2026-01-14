@@ -1,1 +1,17 @@
 @import "tailwindcss";
+@import "tailwindcss";
+
+/* 全体の背景を少しグレーにして、コンテンツ（白）を際立たせる */
+body {
+  @apply bg-slate-100 text-slate-800;
+}
+
+/* 見出しのデフォルトスタイル */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  @apply font-bold text-slate-900;
+}
