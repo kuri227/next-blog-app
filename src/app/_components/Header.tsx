@@ -5,6 +5,7 @@ import {
   faFish,
   faMagnifyingGlass,
   faUser,
+  faGear,
 } from "@fortawesome/free-solid-svg-icons";
 import Link from "next/link";
 
@@ -34,6 +35,12 @@ const Header: React.FC = () => {
               <Link href="/about">
                 <FontAwesomeIcon icon={faUser} className="mr-1" />
                 About
+              </Link>
+            </div>
+            <div>
+              <Link href="/admin/posts">
+                <FontAwesomeIcon icon={faGear} className="mr-1" />
+                Admin
               </Link>
             </div>
           </div>

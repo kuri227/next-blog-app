@@ -4,7 +4,24 @@ import { Post } from "@/generated/prisma/client";
 
 export const GET = async (req: NextRequest) => {
   try {
-    const posts: Post[] = await prisma.post.findMany({
+    const posts = await prisma.post.findMany({
+      // ◀ 推論を利用して posts の型を決定
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        createdAt: true,
+        categories: {
+          select: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
       orderBy: {
         createdAt: "desc",
       },
