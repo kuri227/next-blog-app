@@ -15,15 +15,15 @@ const PostSummary: React.FC<Props> = (props) => {
   const { post } = props;
   const dtFmt = "YYYY-MM-DD";
 
-  // 本文からタグを除去してテキストのみ抽出（抜粋用）
+  // 本文からタグを除去（抜粋表示用）
   const safeHTML = DOMPurify.sanitize(post.content, {
     ALLOWED_TAGS: [],
   });
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-all hover:shadow-xl">
+    <article className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition-all hover:-translate-y-1 hover:shadow-xl">
       <Link href={`/posts/${post.id}`} className="flex h-full flex-col">
-        {/* カバー画像エリア：DBのURLを使用 */}
+        {/* カバー画像エリア：DBのURLを反映 */}
         <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
           <Image
             src={post.coverImage.url}
@@ -47,7 +47,7 @@ const PostSummary: React.FC<Props> = (props) => {
             ))}
           </div>
 
-          <h2 className="mb-2 line-clamp-2 text-xl font-bold text-slate-900 transition-colors group-hover:text-blue-600">
+          <h2 className="mb-2 line-clamp-2 text-xl font-bold text-slate-900 group-hover:text-blue-600">
             {post.title}
           </h2>
 

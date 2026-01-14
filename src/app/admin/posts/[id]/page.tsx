@@ -1,319 +1,184 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import {
+  faSpinner,
+  faSave,
+  faArrowLeft,
+} from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 
-type CategoryApiResponse = {
-  id: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-type SelectableCategory = {
-  id: string;
-  name: string;
-  isSelect: boolean;
-};
-
-type PostApiResponse = {
-  id: string;
-  title: string;
-  content: string;
-  coverImageURL: string;
-  categories: {
-    category: {
-      id: string;
-      name: string;
-    };
-  }[];
-};
+type Category = { id: string; name: string; isSelect: boolean };
 
 const Page: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(false);
+  const { id } = useParams() as { id: string };
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [fetchErrorMsg, setFetchErrorMsg] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [coverImageURL, setCoverImageURL] = useState("");
-  const [checkableCategories, setCheckableCategories] = useState<
-    SelectableCategory[] | null
-  >(null);
-
-  const { id } = useParams() as { id: string };
-  const router = useRouter();
+  const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setIsLoading(true);
+        const [postRes, catRes] = await Promise.all([
+          fetch(`/api/posts/${id}`),
+          fetch("/api/categories"),
+        ]);
+        const post = await postRes.json();
+        const cats = await catRes.json();
 
-        // カテゴリの取得
-        const categoriesRes = await fetch("/api/categories", {
-          method: "GET",
-          cache: "no-store",
-        });
-        if (!categoriesRes.ok) {
-          throw new Error("カテゴリの取得に失敗しました");
-        }
-        const categoriesData = (await categoriesRes.json()) as CategoryApiResponse[];
-
-        // 投稿記事の取得
-        const postRes = await fetch(`/api/posts/${id}`, {
-          method: "GET",
-          cache: "no-store",
-        });
-        if (!postRes.ok) {
-          throw new Error("投稿記事の取得に失敗しました");
-        }
-        const postData = (await postRes.json()) as PostApiResponse;
-
-        // 選択されたカテゴリのIDを取得
-        const selectedCategoryIds = postData.categories.map(
-          (c) => c.category.id,
-        );
-
-        setTitle(postData.title);
-        setContent(postData.content);
-        setCoverImageURL(postData.coverImageURL);
-        setCheckableCategories(
-          categoriesData.map((c) => ({
-            id: c.id,
-            name: c.name,
-            isSelect: selectedCategoryIds.includes(c.id),
+        setTitle(post.title);
+        setContent(post.content);
+        setCoverImageURL(post.coverImageURL);
+        setCategories(
+          cats.map((c: any) => ({
+            ...c,
+            isSelect: post.categories.some(
+              (pc: any) => pc.category.id === c.id,
+            ),
           })),
         );
-      } catch (error) {
-        const errorMsg =
-          error instanceof Error
-            ? error.message
-            : "予期せぬエラーが発生しました";
-        console.error(errorMsg);
-        setFetchErrorMsg(errorMsg);
+      } catch (e) {
+        console.error(e);
       } finally {
         setIsLoading(false);
       }
     };
-
-    if (id) {
-      fetchData();
-    }
+    fetchData();
   }, [id]);
 
-  const switchCategoryState = (categoryId: string) => {
-    if (!checkableCategories) return;
-
-    setCheckableCategories(
-      checkableCategories.map((category) =>
-        category.id === categoryId
-          ? { ...category, isSelect: !category.isSelect }
-          : category,
-      ),
-    );
-  };
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     try {
-      const requestBody = {
-        title,
-        content,
-        coverImageURL,
-        categoryIds: checkableCategories
-          ? checkableCategories.filter((c) => c.isSelect).map((c) => c.id)
-          : [],
-      };
-      const requestUrl = `/api/admin/posts/${id}`;
-      const res = await fetch(requestUrl, {
+      const res = await fetch(`/api/admin/posts/${id}`, {
         method: "PUT",
-        cache: "no-store",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          content,
+          coverImageURL,
+          categoryIds: categories.filter((c) => c.isSelect).map((c) => c.id),
+        }),
       });
-
-      if (!res.ok) {
-        throw new Error(`${res.status}: ${res.statusText}`);
-      }
-
-      setIsSubmitting(false);
-      router.push(`/posts/${id}`);
-    } catch (error) {
-      const errorMsg =
-        error instanceof Error
-          ? `投稿記事のPUTリクエストに失敗しました\n${error.message}`
-          : `予期せぬエラーが発生しました\n${error}`;
-      console.error(errorMsg);
-      window.alert(errorMsg);
+      if (res.ok) router.push("/admin/posts");
+    } catch (e) {
+      console.error(e);
+    } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (!window.confirm(`この記事を本当に削除しますか？`)) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const requestUrl = `/api/admin/posts/${id}`;
-      const res = await fetch(requestUrl, {
-        method: "DELETE",
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        throw new Error(`${res.status}: ${res.statusText}`);
-      }
-      router.replace("/admin/posts");
-    } catch (error) {
-      const errorMsg =
-        error instanceof Error
-          ? `記事のDELETEリクエストに失敗しました\n${error.message}`
-          : `予期せぬエラーが発生しました\n${error}`;
-      console.error(errorMsg);
-      window.alert(errorMsg);
-      setIsSubmitting(false);
-    }
-  };
-
-  if (isLoading) {
+  if (isLoading)
     return (
-      <div className="text-gray-500">
-        <FontAwesomeIcon icon={faSpinner} className="mr-1 animate-spin" />
-        Loading...
+      <div className="flex justify-center py-20 text-slate-400">
+        <FontAwesomeIcon icon={faSpinner} className="animate-spin text-3xl" />
       </div>
     );
-  }
-
-  if (fetchErrorMsg) {
-    return <div className="text-red-500">{fetchErrorMsg}</div>;
-  }
-
-  if (!checkableCategories) {
-    return <div className="text-red-500">データの取得に失敗しました</div>;
-  }
 
   return (
-    <main>
-      <div className="mb-4 text-2xl font-bold">投稿記事の編集・削除</div>
-
-      {isSubmitting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="flex items-center rounded-lg bg-white px-8 py-4 shadow-lg">
-            <FontAwesomeIcon
-              icon={faSpinner}
-              className="mr-2 animate-spin text-gray-500"
-            />
-            <div className="flex items-center text-gray-500">処理中...</div>
-          </div>
-        </div>
-      )}
-
-      <form
-        onSubmit={handleSubmit}
-        className={twMerge("space-y-4", isSubmitting && "opacity-50")}
+    <main className="mx-auto max-w-3xl pb-20">
+      <button
+        onClick={() => router.back()}
+        className="mb-6 text-sm font-bold text-slate-500 transition hover:text-indigo-600"
       >
-        <div className="space-y-1">
-          <label htmlFor="title" className="block font-bold">
-            タイトル
-          </label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            className="w-full rounded-md border-2 px-2 py-1"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="タイトルを記入してください"
-            required
-          />
-        </div>
+        <FontAwesomeIcon icon={faArrowLeft} className="mr-2" />
+        戻る
+      </button>
 
-        <div className="space-y-1">
-          <label htmlFor="content" className="block font-bold">
-            本文
-          </label>
-          <textarea
-            id="content"
-            name="content"
-            className="h-48 w-full rounded-md border-2 px-2 py-1"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="本文を記入してください"
-            required
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label htmlFor="coverImageURL" className="block font-bold">
-            カバーイメージ (URL)
-          </label>
-          <input
-            type="url"
-            id="coverImageURL"
-            name="coverImageURL"
-            className="w-full rounded-md border-2 px-2 py-1"
-            value={coverImageURL}
-            onChange={(e) => setCoverImageURL(e.target.value)}
-            placeholder="カバーイメージのURLを記入してください"
-            required
-          />
-        </div>
-
-        <div className="space-y-1">
-          <div className="font-bold">タグ</div>
-          <div className="flex flex-wrap gap-x-3.5">
-            {checkableCategories.length > 0 ? (
-              checkableCategories.map((c) => (
-                <label key={c.id} className="flex space-x-1">
-                  <input
-                    id={c.id}
-                    type="checkbox"
-                    checked={c.isSelect}
-                    className="mt-0.5 cursor-pointer"
-                    onChange={() => switchCategoryState(c.id)}
-                  />
-                  <span className="cursor-pointer">{c.name}</span>
-                </label>
-              ))
-            ) : (
-              <div>選択可能なカテゴリが存在しません。</div>
-            )}
+      <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+        <h1 className="mb-8 text-2xl font-black tracking-tight text-slate-800">
+          記事の編集
+        </h1>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-slate-700">タイトル</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 transition focus:border-indigo-500 focus:outline-none"
+              required
+            />
           </div>
-        </div>
 
-        <div className="flex justify-end space-x-2">
-          <button
-            type="submit"
-            className={twMerge(
-              "rounded-md px-5 py-1 font-bold",
-              "bg-indigo-500 text-white hover:bg-indigo-600",
-              "disabled:cursor-not-allowed disabled:opacity-50",
-            )}
-            disabled={isSubmitting}
-          >
-            変更を保存
-          </button>
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-slate-700">本文</label>
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="h-64 w-full rounded-xl border border-slate-200 px-4 py-3 transition focus:border-indigo-500 focus:outline-none"
+              required
+            />
+          </div>
 
-          <button
-            type="button"
-            className={twMerge(
-              "rounded-md px-5 py-1 font-bold",
-              "bg-red-500 text-white hover:bg-red-600",
-            )}
-            onClick={handleDelete}
-          >
-            削除
-          </button>
-        </div>
-      </form>
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-slate-700">
+              カバー画像 (URL)
+            </label>
+            <input
+              type="url"
+              value={coverImageURL}
+              onChange={(e) => setCoverImageURL(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 transition focus:border-indigo-500 focus:outline-none"
+              required
+            />
+          </div>
+
+          <div className="space-y-3">
+            <label className="block text-sm font-bold text-slate-700">
+              カテゴリ
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() =>
+                    setCategories(
+                      categories.map((cat) =>
+                        cat.id === c.id
+                          ? { ...cat, isSelect: !cat.isSelect }
+                          : cat,
+                      ),
+                    )
+                  }
+                  className={twMerge(
+                    "rounded-full border px-4 py-1.5 text-xs font-bold transition",
+                    c.isSelect
+                      ? "border-indigo-600 bg-indigo-600 text-white"
+                      : "border-slate-200 bg-white text-slate-500 hover:border-indigo-300",
+                  )}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-4">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full rounded-xl bg-indigo-600 py-4 font-bold text-white shadow-md transition hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+              ) : (
+                <>
+                  <FontAwesomeIcon icon={faSave} className="mr-2" />
+                  変更を保存
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </main>
   );
 };

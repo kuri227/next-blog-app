@@ -2,15 +2,20 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner, faPencil, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { twMerge } from "tailwind-merge";
+import {
+  faSpinner,
+  faPencil,
+  faTrash,
+  faPlus,
+  faTableList,
+  faTags,
+} from "@fortawesome/free-solid-svg-icons";
 import dayjs from "dayjs";
 
 type CategoryApiResponse = {
   id: string;
   name: string;
   createdAt: string;
-  updatedAt: string;
 };
 
 const Page: React.FC = () => {
@@ -18,31 +23,16 @@ const Page: React.FC = () => {
     null,
   );
   const [isLoading, setIsLoading] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchCategories = async () => {
     try {
       setIsLoading(true);
-      const requestUrl = "/api/categories";
-      const res = await fetch(requestUrl, {
-        method: "GET",
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        throw new Error(`${res.status}: ${res.statusText}`);
-      }
-
-      const data = (await res.json()) as CategoryApiResponse[];
-      setCategories(data);
+      const res = await fetch("/api/categories", { cache: "no-store" });
+      if (!res.ok) throw new Error("取得失敗");
+      setCategories(await res.json());
     } catch (error) {
-      const errorMsg =
-        error instanceof Error
-          ? `カテゴリの一覧のフェッチに失敗しました: ${error.message}`
-          : `予期せぬエラーが発生しました ${error}`;
-      console.error(errorMsg);
-      setFetchError(errorMsg);
+      console.error(error);
     } finally {
       setIsLoading(false);
     }
@@ -53,117 +43,89 @@ const Page: React.FC = () => {
   }, []);
 
   const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`カテゴリ「${name}」を本当に削除しますか？`)) {
-      return;
-    }
-
+    if (!window.confirm(`カテゴリ「${name}」を削除しますか？`)) return;
     setIsDeleting(true);
     try {
-      const requestUrl = `/api/admin/categories/${id}`;
-      const res = await fetch(requestUrl, {
+      const res = await fetch(`/api/admin/categories/${id}`, {
         method: "DELETE",
-        cache: "no-store",
       });
-
-      if (!res.ok) {
-        throw new Error(`${res.status}: ${res.statusText}`);
-      }
-
-      await fetchCategories();
+      if (res.ok) await fetchCategories();
     } catch (error) {
-      const errorMsg =
-        error instanceof Error
-          ? `カテゴリのDELETEリクエストに失敗しました\n${error.message}`
-          : `予期せぬエラーが発生しました\n${error}`;
-      console.error(errorMsg);
-      window.alert(errorMsg);
+      console.error(error);
     } finally {
       setIsDeleting(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="text-gray-500">
-        <FontAwesomeIcon icon={faSpinner} className="mr-1 animate-spin" />
-        Loading...
-      </div>
-    );
-  }
-
-  if (fetchError) {
-    return <div className="text-red-500">{fetchError}</div>;
-  }
-
-  if (!categories) {
-    return <div className="text-red-500">カテゴリの取得に失敗しました</div>;
-  }
-
   return (
-    <main>
-      <div className="mb-4 flex items-center justify-between">
-        <div className="text-2xl font-bold">カテゴリの一覧</div>
+    <main className="space-y-6">
+      <div className="flex border-b border-slate-200">
+        <Link
+          href="/admin/posts"
+          className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-indigo-600"
+        >
+          <FontAwesomeIcon icon={faTableList} className="mr-2" />
+          記事管理
+        </Link>
+        <Link
+          href="/admin/categories"
+          className="border-b-2 border-indigo-500 px-4 py-2 text-sm font-bold text-indigo-600"
+        >
+          <FontAwesomeIcon icon={faTags} className="mr-2" />
+          カテゴリ管理
+        </Link>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-black tracking-tight text-slate-800">
+          カテゴリ一覧
+        </h1>
         <Link
           href="/admin/categories/new"
-          className={twMerge(
-            "rounded-md px-5 py-1 font-bold",
-            "bg-indigo-500 text-white hover:bg-indigo-600",
-          )}
+          className="inline-flex items-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700"
         >
+          <FontAwesomeIcon icon={faPlus} className="mr-2" />
           新規作成
         </Link>
       </div>
 
-      {categories.length === 0 ? (
-        <div className="text-gray-500">カテゴリは存在しません</div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse border border-slate-300">
-            <thead className="bg-slate-100">
+      {isLoading ? (
+        <div className="flex justify-center py-20 text-slate-400">
+          <FontAwesomeIcon icon={faSpinner} className="animate-spin text-3xl" />
+        </div>
+      ) : categories && categories.length > 0 ? (
+        <div className="mx-auto max-w-2xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm md:mx-0">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 text-xs font-bold tracking-wider text-slate-500 uppercase">
               <tr>
-                <th className="border border-slate-300 px-4 py-2 text-left">
-                  名前
-                </th>
-                <th className="border border-slate-300 px-4 py-2 text-left">
-                  作成日
-                </th>
-                <th className="border border-slate-300 px-4 py-2 text-center">
-                  操作
-                </th>
+                <th className="px-6 py-4">名前</th>
+                <th className="px-6 py-4">作成日</th>
+                <th className="px-6 py-4 text-center">操作</th>
               </tr>
             </thead>
-            <tbody>
-              {categories.map((category) => (
-                <tr key={category.id} className="hover:bg-slate-50">
-                  <td className="border border-slate-300 px-4 py-2">
-                    {category.name}
+            <tbody className="divide-y divide-slate-100">
+              {categories.map((cat) => (
+                <tr key={cat.id} className="transition hover:bg-slate-50/50">
+                  <td className="px-6 py-4 font-bold text-slate-700">
+                    {cat.name}
                   </td>
-                  <td className="border border-slate-300 px-4 py-2 text-sm text-gray-600">
-                    {dayjs(category.createdAt).format("YYYY-MM-DD")}
+                  <td className="px-6 py-4 text-slate-500">
+                    {dayjs(cat.createdAt).format("YYYY.MM.DD")}
                   </td>
-                  <td className="border border-slate-300 px-4 py-2 text-center">
+                  <td className="px-6 py-4 text-center">
                     <div className="flex justify-center gap-2">
                       <Link
-                        href={`/admin/categories/${category.id}`}
-                        className={twMerge(
-                          "rounded-md px-3 py-1 text-sm font-bold",
-                          "bg-blue-500 text-white hover:bg-blue-600",
-                        )}
+                        href={`/admin/categories/${cat.id}`}
+                        className="rounded-md p-2 text-slate-400 transition hover:bg-indigo-50 hover:text-indigo-600"
                       >
-                        <FontAwesomeIcon icon={faPencil} className="mr-1" />
-                        編集
+                        <FontAwesomeIcon icon={faPencil} />
                       </Link>
                       <button
-                        onClick={() => handleDelete(category.id, category.name)}
+                        onClick={() => handleDelete(cat.id, cat.name)}
                         disabled={isDeleting}
-                        className={twMerge(
-                          "rounded-md px-3 py-1 text-sm font-bold",
-                          "bg-red-500 text-white hover:bg-red-600",
-                          "disabled:cursor-not-allowed disabled:opacity-50",
-                        )}
+                        className="rounded-md p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-30"
                       >
-                        <FontAwesomeIcon icon={faTrash} className="mr-1" />
-                        削除
+                        <FontAwesomeIcon icon={faTrash} />
                       </button>
                     </div>
                   </td>
@@ -171,6 +133,10 @@ const Page: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      ) : (
+        <div className="py-20 text-center text-slate-400">
+          カテゴリがありません。
         </div>
       )}
     </main>

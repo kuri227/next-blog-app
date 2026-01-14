@@ -24,7 +24,7 @@ export default function RootLayout({
           {children}
         </div>
         <footer className="mt-20 border-t border-slate-200 bg-white py-10 text-center text-sm text-slate-500">
-          &copy; 2024 Tech Blog Project.
+          &copy; 2026 Tech Blog Project.
         </footer>
       </body>
     </html>

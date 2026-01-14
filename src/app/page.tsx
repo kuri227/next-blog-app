@@ -5,18 +5,14 @@ import PostSummary from "@/app/_components/PostSummary";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 
-// APIレスポンスに coverImageURL を追加
 type PostApiResponse = {
   id: string;
   title: string;
   content: string;
-  coverImageURL: string; // ◀ 追加
+  coverImageURL: string; // ◀ APIレスポンスに項目を追加
   createdAt: string;
   categories: {
-    category: {
-      id: string;
-      name: string;
-    };
+    category: { id: string; name: string };
   }[];
 };
 
@@ -31,10 +27,9 @@ const Page: React.FC = () => {
           method: "GET",
           cache: "no-store",
         });
-        if (!response.ok) {
-          throw new Error("データの取得に失敗しました");
-        }
+        if (!response.ok) throw new Error("データの取得に失敗しました");
         const data = (await response.json()) as PostApiResponse[];
+
         setPosts(
           data.map((post) => ({
             id: post.id,
@@ -45,7 +40,7 @@ const Page: React.FC = () => {
               id: c.category.id,
               name: c.category.name,
             })),
-            // DBから取得したURLをセット
+            // DBの実画像をセット
             coverImage: {
               url: post.coverImageURL,
               width: 1200,
@@ -62,34 +57,29 @@ const Page: React.FC = () => {
     fetchPosts();
   }, []);
 
-  if (fetchError) {
-    return <div className="py-10 text-red-500">{fetchError}</div>;
-  }
-
-  if (!posts) {
+  if (fetchError) return <div className="py-10 text-red-500">{fetchError}</div>;
+  if (!posts)
     return (
-      <div className="flex justify-center py-20 text-slate-500">
+      <div className="flex justify-center py-20">
         <FontAwesomeIcon
           icon={faSpinner}
-          className="mr-2 animate-spin text-2xl"
+          className="animate-spin text-2xl text-slate-500"
         />
-        Loading...
       </div>
     );
-  }
 
   return (
-    <main>
-      <div className="mb-10 border-b border-slate-200 pb-6">
-        <h1 className="text-3xl font-black text-slate-900 sm:text-4xl">
-          Latest Articles
+    <main className="pb-20">
+      <div className="mb-12 border-b border-slate-200 py-10 text-center">
+        <h1 className="text-4xl font-black tracking-tight text-slate-900 sm:text-6xl">
+          Tech Blog
         </h1>
-        <p className="mt-2 font-medium text-slate-500 italic">
-          最新の技術知見とニュースをお届けします
+        <p className="mt-4 font-medium text-slate-500">
+          技術の知見を共有する場所
         </p>
       </div>
 
-      {/* スマホ1列、中型2列、大型3列のレスポンシブグリッド */}
+      {/* スマホ1列、PC3列のレスポンシブグリッド */}
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
         {posts.map((post) => (
           <PostSummary key={post.id} post={post} />
