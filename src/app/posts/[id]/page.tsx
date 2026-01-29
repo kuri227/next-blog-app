@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 
 import type { Post } from "@/app/_types/Post";
-import dummyPosts from "@/app/_mocks/dummyPosts";
+// dummyPosts のインポートは削除
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -22,20 +22,56 @@ import DOMPurify from "isomorphic-dompurify";
 // 投稿記事の詳細表示 /posts/[id]
 const Page: React.FC = () => {
   const [post, setPost] = useState<Post | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // 初期値を true に設定
 
   // 動的ルートパラメータから 記事id を取得
   const { id } = useParams() as { id: string };
 
   useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => {
-      // dummyPosts から id に一致する投稿を取得
-      setPost(dummyPosts.find((p) => p.id === id) || null);
-      setIsLoading(false);
-    }, 1000);
+    const fetchPost = async () => {
+      setIsLoading(true);
+      try {
+        // APIから記事データを取得/route.ts]
+        const res = await fetch(`/api/posts/${id}`);
 
-    return () => clearTimeout(timer);
+        if (!res.ok) {
+          throw new Error("Failed to fetch post");
+        }
+
+        const data = await res.json();
+
+        // APIのレスポンスデータをフロントエンド用のPost型に合わせて変換
+        const transformedPost: Post = {
+          id: data.id,
+          title: data.title,
+          content: data.content,
+          createdAt: data.createdAt,
+          // DBには画像のサイズ情報がないため、仮の値を設定するか、URLのみを使用するように型定義を見直す必要があります。
+          // ここでは一旦、width/heightに仮の値を入れています。
+          coverImage: {
+            url: data.coverImageURL,
+            width: 1000,
+            height: 500,
+          },
+          // Prismaのネストされた構造からカテゴリ情報を抽出/route.ts]
+          categories: data.categories.map((c: any) => ({
+            id: c.category.id,
+            name: c.category.name,
+          })),
+        };
+
+        setPost(transformedPost);
+      } catch (error) {
+        console.error("Error fetching post:", error);
+        setPost(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchPost();
+    }
   }, [id]);
 
   if (isLoading) {
