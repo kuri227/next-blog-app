@@ -528,10 +528,6 @@ export type EnumPostTypeFieldUpdateOperationsInput = {
   set?: $Enums.PostType
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type PostCreateNestedOneWithoutCategoriesInput = {
   create?: Prisma.XOR<Prisma.PostCreateWithoutCategoriesInput, Prisma.PostUncheckedCreateWithoutCategoriesInput>
   connectOrCreate?: Prisma.PostCreateOrConnectWithoutCategoriesInput

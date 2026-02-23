@@ -27,14 +27,17 @@ enum PostType {
 
 // ユーザーテーブル（Supabase Auth と連携）
 model User {
-  id         String   @id @default(uuid())
-  supabaseId String   @unique        // Supabase の auth.users.id
-  email      String   @unique
-  name       String?
-  avatarUrl  String?                 // GitHub アバター URL
-  role       UserRole @default(USER)
-  bio        String?
-  githubUrl  String?
+  id                   String   @id @default(uuid())
+  supabaseId           String   @unique        // Supabase の auth.users.id
+  email                String   @unique
+  name                 String?
+  avatarUrl            String?                 // GitHub アバター URL
+  role                 UserRole @default(USER)
+  bio                  String?
+  skills               String[]               // 技術スタック ["TypeScript", "Next.js", ...]
+  techInterests        String[]               // 興味分野 ["AI", "Web", "OSS", ...]
+  githubUrl            String?
+  isOnboardingComplete Boolean  @default(false)
   posts      Post[]
   comments   Comment[]
   likes      Like[]

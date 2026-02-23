@@ -33,6 +33,7 @@ export type UserMinAggregateOutputType = {
   role: $Enums.UserRole | null
   bio: string | null
   githubUrl: string | null
+  isOnboardingComplete: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -46,6 +47,7 @@ export type UserMaxAggregateOutputType = {
   role: $Enums.UserRole | null
   bio: string | null
   githubUrl: string | null
+  isOnboardingComplete: boolean | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -58,7 +60,10 @@ export type UserCountAggregateOutputType = {
   avatarUrl: number
   role: number
   bio: number
+  skills: number
+  techInterests: number
   githubUrl: number
+  isOnboardingComplete: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -74,6 +79,7 @@ export type UserMinAggregateInputType = {
   role?: true
   bio?: true
   githubUrl?: true
+  isOnboardingComplete?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -87,6 +93,7 @@ export type UserMaxAggregateInputType = {
   role?: true
   bio?: true
   githubUrl?: true
+  isOnboardingComplete?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -99,7 +106,10 @@ export type UserCountAggregateInputType = {
   avatarUrl?: true
   role?: true
   bio?: true
+  skills?: true
+  techInterests?: true
   githubUrl?: true
+  isOnboardingComplete?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -185,7 +195,10 @@ export type UserGroupByOutputType = {
   avatarUrl: string | null
   role: $Enums.UserRole
   bio: string | null
+  skills: string[]
+  techInterests: string[]
   githubUrl: string | null
+  isOnboardingComplete: boolean
   createdAt: Date
   updatedAt: Date
   _count: UserCountAggregateOutputType | null
@@ -219,7 +232,10 @@ export type UserWhereInput = {
   avatarUrl?: Prisma.StringNullableFilter<"User"> | string | null
   role?: Prisma.EnumUserRoleFilter<"User"> | $Enums.UserRole
   bio?: Prisma.StringNullableFilter<"User"> | string | null
+  skills?: Prisma.StringNullableListFilter<"User">
+  techInterests?: Prisma.StringNullableListFilter<"User">
   githubUrl?: Prisma.StringNullableFilter<"User"> | string | null
+  isOnboardingComplete?: Prisma.BoolFilter<"User"> | boolean
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   posts?: Prisma.PostListRelationFilter
@@ -238,7 +254,10 @@ export type UserOrderByWithRelationInput = {
   avatarUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   role?: Prisma.SortOrder
   bio?: Prisma.SortOrderInput | Prisma.SortOrder
+  skills?: Prisma.SortOrder
+  techInterests?: Prisma.SortOrder
   githubUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  isOnboardingComplete?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   posts?: Prisma.PostOrderByRelationAggregateInput
@@ -260,7 +279,10 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   avatarUrl?: Prisma.StringNullableFilter<"User"> | string | null
   role?: Prisma.EnumUserRoleFilter<"User"> | $Enums.UserRole
   bio?: Prisma.StringNullableFilter<"User"> | string | null
+  skills?: Prisma.StringNullableListFilter<"User">
+  techInterests?: Prisma.StringNullableListFilter<"User">
   githubUrl?: Prisma.StringNullableFilter<"User"> | string | null
+  isOnboardingComplete?: Prisma.BoolFilter<"User"> | boolean
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   posts?: Prisma.PostListRelationFilter
@@ -279,7 +301,10 @@ export type UserOrderByWithAggregationInput = {
   avatarUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   role?: Prisma.SortOrder
   bio?: Prisma.SortOrderInput | Prisma.SortOrder
+  skills?: Prisma.SortOrder
+  techInterests?: Prisma.SortOrder
   githubUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  isOnboardingComplete?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
@@ -298,7 +323,10 @@ export type UserScalarWhereWithAggregatesInput = {
   avatarUrl?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   role?: Prisma.EnumUserRoleWithAggregatesFilter<"User"> | $Enums.UserRole
   bio?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  skills?: Prisma.StringNullableListFilter<"User">
+  techInterests?: Prisma.StringNullableListFilter<"User">
   githubUrl?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  isOnboardingComplete?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
 }
@@ -311,7 +339,10 @@ export type UserCreateInput = {
   avatarUrl?: string | null
   role?: $Enums.UserRole
   bio?: string | null
+  skills?: Prisma.UserCreateskillsInput | string[]
+  techInterests?: Prisma.UserCreatetechInterestsInput | string[]
   githubUrl?: string | null
+  isOnboardingComplete?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   posts?: Prisma.PostCreateNestedManyWithoutAuthorInput
@@ -330,7 +361,10 @@ export type UserUncheckedCreateInput = {
   avatarUrl?: string | null
   role?: $Enums.UserRole
   bio?: string | null
+  skills?: Prisma.UserCreateskillsInput | string[]
+  techInterests?: Prisma.UserCreatetechInterestsInput | string[]
   githubUrl?: string | null
+  isOnboardingComplete?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   posts?: Prisma.PostUncheckedCreateNestedManyWithoutAuthorInput
@@ -349,7 +383,10 @@ export type UserUpdateInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  skills?: Prisma.UserUpdateskillsInput | string[]
+  techInterests?: Prisma.UserUpdatetechInterestsInput | string[]
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOnboardingComplete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   posts?: Prisma.PostUpdateManyWithoutAuthorNestedInput
@@ -368,7 +405,10 @@ export type UserUncheckedUpdateInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  skills?: Prisma.UserUpdateskillsInput | string[]
+  techInterests?: Prisma.UserUpdatetechInterestsInput | string[]
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOnboardingComplete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   posts?: Prisma.PostUncheckedUpdateManyWithoutAuthorNestedInput
@@ -387,7 +427,10 @@ export type UserCreateManyInput = {
   avatarUrl?: string | null
   role?: $Enums.UserRole
   bio?: string | null
+  skills?: Prisma.UserCreateskillsInput | string[]
+  techInterests?: Prisma.UserCreatetechInterestsInput | string[]
   githubUrl?: string | null
+  isOnboardingComplete?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -400,7 +443,10 @@ export type UserUpdateManyMutationInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  skills?: Prisma.UserUpdateskillsInput | string[]
+  techInterests?: Prisma.UserUpdatetechInterestsInput | string[]
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOnboardingComplete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -413,9 +459,20 @@ export type UserUncheckedUpdateManyInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  skills?: Prisma.UserUpdateskillsInput | string[]
+  techInterests?: Prisma.UserUpdatetechInterestsInput | string[]
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOnboardingComplete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type StringNullableListFilter<$PrismaModel = never> = {
+  equals?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel> | null
+  has?: string | Prisma.StringFieldRefInput<$PrismaModel> | null
+  hasEvery?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  hasSome?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  isEmpty?: boolean
 }
 
 export type UserCountOrderByAggregateInput = {
@@ -426,7 +483,10 @@ export type UserCountOrderByAggregateInput = {
   avatarUrl?: Prisma.SortOrder
   role?: Prisma.SortOrder
   bio?: Prisma.SortOrder
+  skills?: Prisma.SortOrder
+  techInterests?: Prisma.SortOrder
   githubUrl?: Prisma.SortOrder
+  isOnboardingComplete?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -440,6 +500,7 @@ export type UserMaxOrderByAggregateInput = {
   role?: Prisma.SortOrder
   bio?: Prisma.SortOrder
   githubUrl?: Prisma.SortOrder
+  isOnboardingComplete?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -453,6 +514,7 @@ export type UserMinOrderByAggregateInput = {
   role?: Prisma.SortOrder
   bio?: Prisma.SortOrder
   githubUrl?: Prisma.SortOrder
+  isOnboardingComplete?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -460,6 +522,14 @@ export type UserMinOrderByAggregateInput = {
 export type UserScalarRelationFilter = {
   is?: Prisma.UserWhereInput
   isNot?: Prisma.UserWhereInput
+}
+
+export type UserCreateskillsInput = {
+  set: string[]
+}
+
+export type UserCreatetechInterestsInput = {
+  set: string[]
 }
 
 export type StringFieldUpdateOperationsInput = {
@@ -472,6 +542,20 @@ export type NullableStringFieldUpdateOperationsInput = {
 
 export type EnumUserRoleFieldUpdateOperationsInput = {
   set?: $Enums.UserRole
+}
+
+export type UserUpdateskillsInput = {
+  set?: string[]
+  push?: string | string[]
+}
+
+export type UserUpdatetechInterestsInput = {
+  set?: string[]
+  push?: string | string[]
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
 }
 
 export type DateTimeFieldUpdateOperationsInput = {
@@ -570,7 +654,10 @@ export type UserCreateWithoutFollowingInput = {
   avatarUrl?: string | null
   role?: $Enums.UserRole
   bio?: string | null
+  skills?: Prisma.UserCreateskillsInput | string[]
+  techInterests?: Prisma.UserCreatetechInterestsInput | string[]
   githubUrl?: string | null
+  isOnboardingComplete?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   posts?: Prisma.PostCreateNestedManyWithoutAuthorInput
@@ -588,7 +675,10 @@ export type UserUncheckedCreateWithoutFollowingInput = {
   avatarUrl?: string | null
   role?: $Enums.UserRole
   bio?: string | null
+  skills?: Prisma.UserCreateskillsInput | string[]
+  techInterests?: Prisma.UserCreatetechInterestsInput | string[]
   githubUrl?: string | null
+  isOnboardingComplete?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   posts?: Prisma.PostUncheckedCreateNestedManyWithoutAuthorInput
@@ -611,7 +701,10 @@ export type UserCreateWithoutFollowersInput = {
   avatarUrl?: string | null
   role?: $Enums.UserRole
   bio?: string | null
+  skills?: Prisma.UserCreateskillsInput | string[]
+  techInterests?: Prisma.UserCreatetechInterestsInput | string[]
   githubUrl?: string | null
+  isOnboardingComplete?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   posts?: Prisma.PostCreateNestedManyWithoutAuthorInput
@@ -629,7 +722,10 @@ export type UserUncheckedCreateWithoutFollowersInput = {
   avatarUrl?: string | null
   role?: $Enums.UserRole
   bio?: string | null
+  skills?: Prisma.UserCreateskillsInput | string[]
+  techInterests?: Prisma.UserCreatetechInterestsInput | string[]
   githubUrl?: string | null
+  isOnboardingComplete?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   posts?: Prisma.PostUncheckedCreateNestedManyWithoutAuthorInput
@@ -663,7 +759,10 @@ export type UserUpdateWithoutFollowingInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  skills?: Prisma.UserUpdateskillsInput | string[]
+  techInterests?: Prisma.UserUpdatetechInterestsInput | string[]
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOnboardingComplete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   posts?: Prisma.PostUpdateManyWithoutAuthorNestedInput
@@ -681,7 +780,10 @@ export type UserUncheckedUpdateWithoutFollowingInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  skills?: Prisma.UserUpdateskillsInput | string[]
+  techInterests?: Prisma.UserUpdatetechInterestsInput | string[]
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOnboardingComplete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   posts?: Prisma.PostUncheckedUpdateManyWithoutAuthorNestedInput
@@ -710,7 +812,10 @@ export type UserUpdateWithoutFollowersInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  skills?: Prisma.UserUpdateskillsInput | string[]
+  techInterests?: Prisma.UserUpdatetechInterestsInput | string[]
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOnboardingComplete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   posts?: Prisma.PostUpdateManyWithoutAuthorNestedInput
@@ -728,7 +833,10 @@ export type UserUncheckedUpdateWithoutFollowersInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  skills?: Prisma.UserUpdateskillsInput | string[]
+  techInterests?: Prisma.UserUpdatetechInterestsInput | string[]
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOnboardingComplete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   posts?: Prisma.PostUncheckedUpdateManyWithoutAuthorNestedInput
@@ -746,7 +854,10 @@ export type UserCreateWithoutPostsInput = {
   avatarUrl?: string | null
   role?: $Enums.UserRole
   bio?: string | null
+  skills?: Prisma.UserCreateskillsInput | string[]
+  techInterests?: Prisma.UserCreatetechInterestsInput | string[]
   githubUrl?: string | null
+  isOnboardingComplete?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   comments?: Prisma.CommentCreateNestedManyWithoutAuthorInput
@@ -764,7 +875,10 @@ export type UserUncheckedCreateWithoutPostsInput = {
   avatarUrl?: string | null
   role?: $Enums.UserRole
   bio?: string | null
+  skills?: Prisma.UserCreateskillsInput | string[]
+  techInterests?: Prisma.UserCreatetechInterestsInput | string[]
   githubUrl?: string | null
+  isOnboardingComplete?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   comments?: Prisma.CommentUncheckedCreateNestedManyWithoutAuthorInput
@@ -798,7 +912,10 @@ export type UserUpdateWithoutPostsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  skills?: Prisma.UserUpdateskillsInput | string[]
+  techInterests?: Prisma.UserUpdatetechInterestsInput | string[]
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOnboardingComplete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   comments?: Prisma.CommentUpdateManyWithoutAuthorNestedInput
@@ -816,7 +933,10 @@ export type UserUncheckedUpdateWithoutPostsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  skills?: Prisma.UserUpdateskillsInput | string[]
+  techInterests?: Prisma.UserUpdatetechInterestsInput | string[]
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOnboardingComplete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   comments?: Prisma.CommentUncheckedUpdateManyWithoutAuthorNestedInput
@@ -834,7 +954,10 @@ export type UserCreateWithoutCommentsInput = {
   avatarUrl?: string | null
   role?: $Enums.UserRole
   bio?: string | null
+  skills?: Prisma.UserCreateskillsInput | string[]
+  techInterests?: Prisma.UserCreatetechInterestsInput | string[]
   githubUrl?: string | null
+  isOnboardingComplete?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   posts?: Prisma.PostCreateNestedManyWithoutAuthorInput
@@ -852,7 +975,10 @@ export type UserUncheckedCreateWithoutCommentsInput = {
   avatarUrl?: string | null
   role?: $Enums.UserRole
   bio?: string | null
+  skills?: Prisma.UserCreateskillsInput | string[]
+  techInterests?: Prisma.UserCreatetechInterestsInput | string[]
   githubUrl?: string | null
+  isOnboardingComplete?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   posts?: Prisma.PostUncheckedCreateNestedManyWithoutAuthorInput
@@ -886,7 +1012,10 @@ export type UserUpdateWithoutCommentsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  skills?: Prisma.UserUpdateskillsInput | string[]
+  techInterests?: Prisma.UserUpdatetechInterestsInput | string[]
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOnboardingComplete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   posts?: Prisma.PostUpdateManyWithoutAuthorNestedInput
@@ -904,7 +1033,10 @@ export type UserUncheckedUpdateWithoutCommentsInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  skills?: Prisma.UserUpdateskillsInput | string[]
+  techInterests?: Prisma.UserUpdatetechInterestsInput | string[]
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOnboardingComplete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   posts?: Prisma.PostUncheckedUpdateManyWithoutAuthorNestedInput
@@ -922,7 +1054,10 @@ export type UserCreateWithoutLikesInput = {
   avatarUrl?: string | null
   role?: $Enums.UserRole
   bio?: string | null
+  skills?: Prisma.UserCreateskillsInput | string[]
+  techInterests?: Prisma.UserCreatetechInterestsInput | string[]
   githubUrl?: string | null
+  isOnboardingComplete?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   posts?: Prisma.PostCreateNestedManyWithoutAuthorInput
@@ -940,7 +1075,10 @@ export type UserUncheckedCreateWithoutLikesInput = {
   avatarUrl?: string | null
   role?: $Enums.UserRole
   bio?: string | null
+  skills?: Prisma.UserCreateskillsInput | string[]
+  techInterests?: Prisma.UserCreatetechInterestsInput | string[]
   githubUrl?: string | null
+  isOnboardingComplete?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   posts?: Prisma.PostUncheckedCreateNestedManyWithoutAuthorInput
@@ -974,7 +1112,10 @@ export type UserUpdateWithoutLikesInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  skills?: Prisma.UserUpdateskillsInput | string[]
+  techInterests?: Prisma.UserUpdatetechInterestsInput | string[]
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOnboardingComplete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   posts?: Prisma.PostUpdateManyWithoutAuthorNestedInput
@@ -992,7 +1133,10 @@ export type UserUncheckedUpdateWithoutLikesInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  skills?: Prisma.UserUpdateskillsInput | string[]
+  techInterests?: Prisma.UserUpdatetechInterestsInput | string[]
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOnboardingComplete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   posts?: Prisma.PostUncheckedUpdateManyWithoutAuthorNestedInput
@@ -1010,7 +1154,10 @@ export type UserCreateWithoutBookmarksInput = {
   avatarUrl?: string | null
   role?: $Enums.UserRole
   bio?: string | null
+  skills?: Prisma.UserCreateskillsInput | string[]
+  techInterests?: Prisma.UserCreatetechInterestsInput | string[]
   githubUrl?: string | null
+  isOnboardingComplete?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   posts?: Prisma.PostCreateNestedManyWithoutAuthorInput
@@ -1028,7 +1175,10 @@ export type UserUncheckedCreateWithoutBookmarksInput = {
   avatarUrl?: string | null
   role?: $Enums.UserRole
   bio?: string | null
+  skills?: Prisma.UserCreateskillsInput | string[]
+  techInterests?: Prisma.UserCreatetechInterestsInput | string[]
   githubUrl?: string | null
+  isOnboardingComplete?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
   posts?: Prisma.PostUncheckedCreateNestedManyWithoutAuthorInput
@@ -1062,7 +1212,10 @@ export type UserUpdateWithoutBookmarksInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  skills?: Prisma.UserUpdateskillsInput | string[]
+  techInterests?: Prisma.UserUpdatetechInterestsInput | string[]
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOnboardingComplete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   posts?: Prisma.PostUpdateManyWithoutAuthorNestedInput
@@ -1080,7 +1233,10 @@ export type UserUncheckedUpdateWithoutBookmarksInput = {
   avatarUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
   bio?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  skills?: Prisma.UserUpdateskillsInput | string[]
+  techInterests?: Prisma.UserUpdatetechInterestsInput | string[]
   githubUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  isOnboardingComplete?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   posts?: Prisma.PostUncheckedUpdateManyWithoutAuthorNestedInput
@@ -1174,7 +1330,10 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   avatarUrl?: boolean
   role?: boolean
   bio?: boolean
+  skills?: boolean
+  techInterests?: boolean
   githubUrl?: boolean
+  isOnboardingComplete?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   posts?: boolean | Prisma.User$postsArgs<ExtArgs>
@@ -1194,7 +1353,10 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   avatarUrl?: boolean
   role?: boolean
   bio?: boolean
+  skills?: boolean
+  techInterests?: boolean
   githubUrl?: boolean
+  isOnboardingComplete?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -1207,7 +1369,10 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   avatarUrl?: boolean
   role?: boolean
   bio?: boolean
+  skills?: boolean
+  techInterests?: boolean
   githubUrl?: boolean
+  isOnboardingComplete?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -1220,12 +1385,15 @@ export type UserSelectScalar = {
   avatarUrl?: boolean
   role?: boolean
   bio?: boolean
+  skills?: boolean
+  techInterests?: boolean
   githubUrl?: boolean
+  isOnboardingComplete?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "supabaseId" | "email" | "name" | "avatarUrl" | "role" | "bio" | "githubUrl" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "supabaseId" | "email" | "name" | "avatarUrl" | "role" | "bio" | "skills" | "techInterests" | "githubUrl" | "isOnboardingComplete" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   posts?: boolean | Prisma.User$postsArgs<ExtArgs>
   comments?: boolean | Prisma.User$commentsArgs<ExtArgs>
@@ -1256,7 +1424,10 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     avatarUrl: string | null
     role: $Enums.UserRole
     bio: string | null
+    skills: string[]
+    techInterests: string[]
     githubUrl: string | null
+    isOnboardingComplete: boolean
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["user"]>
@@ -1695,7 +1866,10 @@ export interface UserFieldRefs {
   readonly avatarUrl: Prisma.FieldRef<"User", 'String'>
   readonly role: Prisma.FieldRef<"User", 'UserRole'>
   readonly bio: Prisma.FieldRef<"User", 'String'>
+  readonly skills: Prisma.FieldRef<"User", 'String[]'>
+  readonly techInterests: Prisma.FieldRef<"User", 'String[]'>
   readonly githubUrl: Prisma.FieldRef<"User", 'String'>
+  readonly isOnboardingComplete: Prisma.FieldRef<"User", 'Boolean'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
 }

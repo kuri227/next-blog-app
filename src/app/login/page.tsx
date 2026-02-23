@@ -1,33 +1,16 @@
 "use client";
 import { useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEnvelope, faKey, faArrowUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
-import { twMerge } from "tailwind-merge";
-import ValidationAlert from "../_components/ValidationAlert";
 import { supabase } from "@/utils/supabase";
-import { useRouter } from "next/navigation";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 
 const Page: React.FC = () => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [emailError, setEmailError] = useState("");
-  const [loginError, setLoginError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const router = useRouter();
-
-  const updateEmailField = (value: string) => {
-    setEmail(value);
-    if (value.length > 0 && !value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      setEmailError("メールアドレスの形式で入力してください。");
-      return;
-    }
-    setEmailError("");
-  };
-
-  // GitHub OAuth でログイン
   const handleGitHubLogin = async () => {
-    setIsSubmitting(true);
+    setIsLoading(true);
+    setError("");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
@@ -35,120 +18,55 @@ const Page: React.FC = () => {
       },
     });
     if (error) {
-      setLoginError(`GitHub ログインに失敗しました（${error.message}）`);
-      setIsSubmitting(false);
-    }
-    // 成功時はブラウザが GitHub → Supabase → /auth/callback へリダイレクトする
-  };
-
-  // メール/パスワードでログイン（管理者用）
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setLoginError("");
-
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) {
-        setLoginError(
-          `ログインIDまたはパスワードが違います（${error.code}）。`,
-        );
-        return;
-      }
-      router.replace("/admin");
-    } catch (error) {
-      setLoginError("ログイン処理中に予期せぬエラーが発生しました。");
-      console.error(JSON.stringify(error, null, 2));
-    } finally {
-      setIsSubmitting(false);
+      setError(error.message);
+      setIsLoading(false);
     }
   };
 
   return (
-    <main className="mx-auto max-w-md py-10">
-      <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="mb-8 text-2xl font-black tracking-tight text-slate-800">
-          ログイン
-        </h1>
-
-        <ValidationAlert msg={loginError} />
-
-        {/* GitHub OAuth ボタン */}
-        <button
-          onClick={handleGitHubLogin}
-          disabled={isSubmitting}
-          className="mb-6 flex w-full items-center justify-center gap-3 rounded-xl bg-slate-900 py-3 font-bold text-white transition hover:bg-slate-700 disabled:opacity-50"
-        >
-          <FontAwesomeIcon icon={faArrowUpRightFromSquare} className="text-xl" />
-          GitHub でログイン
-        </button>
-
-        <div className="mb-6 flex items-center gap-4">
-          <hr className="flex-1 border-slate-200" />
-          <span className="text-xs font-bold text-slate-400">または</span>
-          <hr className="flex-1 border-slate-200" />
+    <main className="flex min-h-[80vh] items-center justify-center px-4">
+      <div className="w-full max-w-sm">
+        {/* ロゴ＋タイトル */}
+        <div className="mb-10 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 text-2xl shadow-lg">
+            ⚡
+          </div>
+          <h1 className="text-2xl font-black text-slate-900">
+            TechFeed にログイン
+          </h1>
+          <p className="mt-2 text-sm text-slate-500">
+            GitHub アカウントで続ける
+          </p>
         </div>
 
-        {/* メール/パスワード（管理者用） */}
-        <form
-          onSubmit={handleSubmit}
-          className={twMerge("space-y-4", isSubmitting && "opacity-50")}
+        {error && (
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        <button
+          onClick={handleGitHubLogin}
+          disabled={isLoading}
+          className="flex w-full items-center justify-center gap-3 rounded-2xl bg-slate-900 px-6 py-4 text-base font-bold text-white shadow-lg transition hover:bg-slate-700 disabled:opacity-60"
         >
-          <div className="space-y-1">
-            <label htmlFor="email" className="block text-sm font-bold text-slate-700">
-              <FontAwesomeIcon icon={faEnvelope} className="mr-1" />
-              メールアドレス
-            </label>
-            <input
-              type="text"
-              id="email"
-              name="email"
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/10"
-              placeholder="admin@example.com"
-              value={email}
-              onChange={(e) => updateEmailField(e.target.value)}
-              required
-            />
-            <ValidationAlert msg={emailError} />
-          </div>
+          {isLoading ? (
+            <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+          ) : (
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+            </svg>
+          )}
+          GitHub でログインする
+        </button>
 
-          <div className="space-y-1">
-            <label htmlFor="password" className="block text-sm font-bold text-slate-700">
-              <FontAwesomeIcon icon={faKey} className="mr-1" />
-              パスワード
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/10"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            className={twMerge(
-              "w-full rounded-xl py-2.5 font-bold text-sm",
-              "bg-indigo-600 text-white hover:bg-indigo-700",
-              "disabled:cursor-not-allowed disabled:opacity-50",
-            )}
-            disabled={
-              isSubmitting ||
-              emailError !== "" ||
-              email.length === 0 ||
-              password.length === 0
-            }
-          >
-            ログイン（管理者）
-          </button>
-        </form>
+        <p className="mt-6 text-center text-xs text-slate-400">
+          ログインすることで
+          <a href="#" className="underline">利用規約</a>
+          および
+          <a href="#" className="underline">プライバシーポリシー</a>
+          に同意したものとみなします。
+        </p>
       </div>
     </main>
   );

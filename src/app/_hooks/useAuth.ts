@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "@/utils/supabase";
+import { useRouter, usePathname } from "next/navigation";
 
-type DbUser = {
+export type DbUser = {
   id: string;
   supabaseId: string;
   email: string;
@@ -11,6 +12,9 @@ type DbUser = {
   githubUrl: string | null;
   role: "ADMIN" | "USER";
   bio: string | null;
+  skills: string[];
+  techInterests: string[];
+  isOnboardingComplete: boolean;
 };
 
 export const useAuth = () => {
@@ -18,8 +22,9 @@ export const useAuth = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [dbUser, setDbUser] = useState<DbUser | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
 
-  // Supabase セッションが確立したら DB ユーザーを同期・取得する
   const syncUser = async (accessToken: string) => {
     try {
       const res = await fetch("/api/auth/sync", {
@@ -27,8 +32,12 @@ export const useAuth = () => {
         headers: { Authorization: accessToken },
       });
       if (res.ok) {
-        const user: DbUser = await res.json();
-        setDbUser(user);
+        const data: DbUser & { isNewUser?: boolean } = await res.json();
+        setDbUser(data);
+        // 初回ログイン（オンボーディング未完了）の場合リダイレクト
+        if (!data.isOnboardingComplete && pathname !== "/onboarding") {
+          router.replace("/onboarding");
+        }
       }
     } catch (e) {
       console.error("User sync failed:", e);
@@ -36,7 +45,6 @@ export const useAuth = () => {
   };
 
   useEffect(() => {
-    // 認証状態の変更を監視
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setSession(session);
@@ -50,31 +58,24 @@ export const useAuth = () => {
       },
     );
 
-    // 初期セッションの取得
     const getInitialSession = async () => {
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         setToken(session?.access_token || null);
         if (session?.access_token) {
           await syncUser(session.access_token);
         }
       } catch (error) {
-        console.error(
-          `セッションの取得に失敗しました。\n${error instanceof Error ? error.message : JSON.stringify(error, null, 2)}`,
-        );
+        console.error(`セッション取得失敗: ${error instanceof Error ? error.message : error}`);
       } finally {
         setIsLoading(false);
       }
     };
 
     getInitialSession();
-
-    // アンマウント時に監視を解除
     return () => authListener?.subscription?.unsubscribe();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { isLoading, session, token, dbUser };
+  return { isLoading, session, token, dbUser, setDbUser };
 };
