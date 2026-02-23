@@ -1,6 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, ChangeEvent } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useAuth } from "@/app/_hooks/useAuth";
+import { supabase } from "@/utils/supabase";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSpinner,
@@ -12,23 +14,27 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 
+const bucketName = "cover-image";
 type Category = { id: string; name: string; isSelect: boolean };
 
 // バリデーション定数
 const TITLE_MAX = 100;
 const CONTENT_MIN = 10;
-const CONTENT_MAX = 5000; // 本文の最大文字数制限
+const CONTENT_MAX = 5000;
 
 const Page: React.FC = () => {
   const { id } = useParams() as { id: string };
   const router = useRouter();
+  const { token } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [coverImageURL, setCoverImageURL] = useState("");
+  const [coverImageKey, setCoverImageKey] = useState<string | undefined>();
+  const [coverImageUrl, setCoverImageUrl] = useState<string | undefined>();
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
@@ -42,7 +48,16 @@ const Page: React.FC = () => {
         const cats = await cRes.json();
         setTitle(post.title);
         setContent(post.content);
-        setCoverImageURL(post.coverImageURL);
+
+        // 既存の coverImageKey をセット
+        if (post.coverImageKey) {
+          setCoverImageKey(post.coverImageKey);
+          const { data: urlData } = supabase.storage
+            .from(bucketName)
+            .getPublicUrl(post.coverImageKey);
+          setCoverImageUrl(urlData.publicUrl);
+        }
+
         setCategories(
           cats.map((c: any) => ({
             ...c,
@@ -58,7 +73,38 @@ const Page: React.FC = () => {
     fetchData();
   }, [id]);
 
-  // 強化されたバリデーション
+  // 画像アップロード処理
+  const handleImageChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    setCoverImageKey(undefined);
+    setCoverImageUrl(undefined);
+
+    if (!e.target.files || e.target.files.length === 0) return;
+
+    const file = e.target.files[0];
+    const path = `private/${file.name}`;
+
+    setIsUploading(true);
+    try {
+      const { data, error } = await supabase.storage
+        .from(bucketName)
+        .upload(path, file, { upsert: true });
+
+      if (error || !data) {
+        window.alert(`アップロードに失敗しました: ${error?.message}`);
+        return;
+      }
+
+      setCoverImageKey(data.path);
+      const { data: urlData } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(data.path);
+      setCoverImageUrl(urlData.publicUrl);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // バリデーション
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!title.trim()) errs.title = "タイトルは必須です";
@@ -70,10 +116,8 @@ const Page: React.FC = () => {
     if (content.length > CONTENT_MAX)
       errs.content = `本文は${CONTENT_MAX}文字以内で入力してください`;
 
-    const urlPattern = /^(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp|svg))$/i;
-    if (!coverImageURL.trim()) errs.coverImageURL = "カバー画像URLは必須です";
-    else if (!urlPattern.test(coverImageURL))
-      errs.coverImageURL = "有効な画像URLを入力してください";
+    if (!coverImageKey)
+      errs.coverImageKey = "カバー画像をアップロードしてください";
 
     if (categories.filter((c) => c.isSelect).length === 0)
       errs.categories = "カテゴリを最低1つ選択してください";
@@ -89,15 +133,22 @@ const Page: React.FC = () => {
     try {
       const res = await fetch(`/api/admin/posts/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token || "",
+        },
         body: JSON.stringify({
           title,
           content,
-          coverImageURL,
+          coverImageKey,
           categoryIds: categories.filter((c) => c.isSelect).map((c) => c.id),
         }),
       });
       if (res.ok) router.push("/admin/posts");
+      else throw new Error("更新に失敗しました");
+    } catch (error) {
+      console.error(error);
+      window.alert("エラーが発生しました");
     } finally {
       setIsSubmitting(false);
     }
@@ -149,7 +200,7 @@ const Page: React.FC = () => {
               )}
             </div>
 
-            {/* 本文 ＋ 進捗ゲージ */}
+            {/* 本文 */}
             <div className="space-y-3">
               <div className="flex items-end justify-between">
                 <label className="ml-1 text-sm font-bold text-slate-700">
@@ -177,14 +228,11 @@ const Page: React.FC = () => {
                     : "border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5",
                 )}
               />
-              {/* 本文用の進捗ゲージ */}
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                 <div
                   className={twMerge(
                     "h-full transition-all duration-500",
-                    content.length > CONTENT_MAX
-                      ? "bg-red-500"
-                      : "bg-indigo-600",
+                    content.length > CONTENT_MAX ? "bg-red-500" : "bg-indigo-600",
                   )}
                   style={{
                     width: `${Math.min((content.length / CONTENT_MAX) * 100, 100)}%`,
@@ -199,32 +247,28 @@ const Page: React.FC = () => {
               )}
             </div>
 
-            {/* カバー画像 ＋ プレビュー */}
+            {/* カバー画像アップロード */}
             <div className="space-y-4">
               <label className="ml-1 text-sm font-bold text-slate-700">
-                カバー画像URL
+                カバー画像
               </label>
               <input
-                type="text"
-                value={coverImageURL}
-                onChange={(e) => setCoverImageURL(e.target.value)}
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                disabled={isUploading}
                 className={twMerge(
-                  "w-full rounded-2xl border px-5 py-4 font-mono text-sm transition-all focus:outline-none",
-                  errors.coverImageURL
-                    ? "border-red-500 bg-red-50"
-                    : "border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5",
+                  "file:rounded file:px-2 file:py-1",
+                  "file:bg-indigo-500 file:text-white hover:file:bg-indigo-600",
+                  "file:cursor-pointer",
+                  errors.coverImageKey ? "border border-red-500 rounded p-1" : "",
                 )}
               />
-              {errors.coverImageURL && (
-                <p className="flex items-center gap-1 text-xs font-bold text-red-500">
-                  <FontAwesomeIcon icon={faExclamationCircle} />{" "}
-                  {errors.coverImageURL}
-                </p>
-              )}
-              {coverImageURL && !errors.coverImageURL && (
+              {/* 既存画像 or 新規アップロードのプレビュー */}
+              {coverImageUrl && (
                 <div className="group relative aspect-video overflow-hidden rounded-3xl border border-slate-200 shadow-inner">
                   <img
-                    src={coverImageURL}
+                    src={coverImageUrl}
                     alt="Preview"
                     className="h-full w-full object-cover"
                   />
@@ -233,6 +277,12 @@ const Page: React.FC = () => {
                     Preview
                   </div>
                 </div>
+              )}
+              {errors.coverImageKey && (
+                <p className="flex items-center gap-1 text-xs font-bold text-red-500">
+                  <FontAwesomeIcon icon={faExclamationCircle} />{" "}
+                  {errors.coverImageKey}
+                </p>
               )}
             </div>
 
@@ -276,10 +326,10 @@ const Page: React.FC = () => {
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isUploading}
               className="w-full rounded-2xl bg-slate-900 py-5 font-black text-white shadow-xl shadow-slate-200 transition-all hover:bg-slate-800 active:scale-[0.98] disabled:opacity-50"
             >
-              {isSubmitting ? (
+              {isSubmitting || isUploading ? (
                 <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
               ) : (
                 <>

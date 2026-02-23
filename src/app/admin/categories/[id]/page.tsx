@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useAuth } from "@/app/_hooks/useAuth";
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -14,6 +15,7 @@ import {
 const Page: React.FC = () => {
   const { id } = useParams() as { id: string };
   const router = useRouter();
+  const { token } = useAuth();
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,7 +45,10 @@ const Page: React.FC = () => {
     try {
       const res = await fetch(`/api/admin/categories/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token || "",
+        },
         body: JSON.stringify({ name }),
       });
 

@@ -4,12 +4,13 @@ import type { Post } from "@/app/_types/Post";
 import PostSummary from "@/app/_components/PostSummary";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { supabase } from "@/utils/supabase";
 
 type PostApiResponse = {
   id: string;
   title: string;
   content: string;
-  coverImageURL: string; // ◀ APIレスポンスに項目を追加
+  coverImageKey: string; // ◄ Supabase Storage のパス
   createdAt: string;
   categories: {
     category: { id: string; name: string };
@@ -40,9 +41,11 @@ const Page: React.FC = () => {
               id: c.category.id,
               name: c.category.name,
             })),
-            // DBの実画像をセット
+            // Supabase Storage から URL を取得
             coverImage: {
-              url: post.coverImageURL,
+              url: supabase.storage
+                .from("cover-image")
+                .getPublicUrl(post.coverImageKey).data.publicUrl,
               width: 1200,
               height: 630,
             },

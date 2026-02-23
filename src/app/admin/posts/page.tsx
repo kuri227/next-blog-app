@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useAuth } from "@/app/_hooks/useAuth";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSpinner,
@@ -26,6 +27,7 @@ const Page: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const { token } = useAuth();
 
   const fetchPosts = async () => {
     setIsLoading(true);
@@ -45,7 +47,12 @@ const Page: React.FC = () => {
     if (!window.confirm(`「${title}」を削除しますか？`)) return;
     setIsDeleting(true);
     try {
-      await fetch(`/api/admin/posts/${id}`, { method: "DELETE" });
+      await fetch(`/api/admin/posts/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: token || "",
+        },
+      });
       await fetchPosts();
     } finally {
       setIsDeleting(false);

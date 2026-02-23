@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/_hooks/useAuth";
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -13,6 +14,7 @@ import {
 
 const Page: React.FC = () => {
   const router = useRouter();
+  const { token } = useAuth();
   const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -23,7 +25,10 @@ const Page: React.FC = () => {
     try {
       const res = await fetch("/api/admin/categories", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token || "",
+        },
         body: JSON.stringify({ name }),
       });
 

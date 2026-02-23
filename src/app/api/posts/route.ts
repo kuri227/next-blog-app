@@ -8,7 +8,7 @@ export const GET = async (req: NextRequest) => {
         id: true,
         title: true,
         content: true,
-        coverImageURL: true, // ◀ 追加：DB内の画像URLを取得
+        coverImageKey: true, // ◀ Supabase Storage のパスを取得
         createdAt: true,
         categories: {
           select: {

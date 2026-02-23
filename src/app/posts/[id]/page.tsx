@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 
 import type { Post } from "@/app/_types/Post";
+import { supabase } from "@/utils/supabase";
 // dummyPosts のインポートは削除
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -46,10 +47,10 @@ const Page: React.FC = () => {
           title: data.title,
           content: data.content,
           createdAt: data.createdAt,
-          // DBには画像のサイズ情報がないため、仮の値を設定するか、URLのみを使用するように型定義を見直す必要があります。
-          // ここでは一旦、width/heightに仮の値を入れています。
           coverImage: {
-            url: data.coverImageURL,
+            url: supabase.storage
+              .from("cover-image")
+              .getPublicUrl(data.coverImageKey).data.publicUrl,
             width: 1000,
             height: 500,
           },

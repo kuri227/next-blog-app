@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 import type { Post } from "@/generated/prisma/client";
+import { supabase } from "@/utils/supabase";
 
 type RouteParams = {
   params: Promise<{
@@ -11,17 +12,28 @@ type RouteParams = {
 type RequestBody = {
   title: string;
   content: string;
-  coverImageURL: string;
+  coverImageKey: string;
   categoryIds: string[];
 };
 
 export const PUT = async (req: NextRequest, routeParams: RouteParams) => {
+  // 認証チェック
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
+  }
+
+  const { data, error } = await supabase.auth.getUser(authHeader);
+  if (error || !data.user) {
+    return NextResponse.json({ error: "認証に失敗しました" }, { status: 401 });
+  }
+
   try {
     const { id } = await routeParams.params;
     const requestBody: RequestBody = await req.json();
 
     // 分割代入
-    const { title, content, coverImageURL, categoryIds } = requestBody;
+    const { title, content, coverImageKey, categoryIds } = requestBody;
 
     // categoryIds に該当するカテゴリが存在するか確認
     const categories = await prisma.category.findMany({
@@ -46,7 +58,7 @@ export const PUT = async (req: NextRequest, routeParams: RouteParams) => {
       data: {
         title, // title: title の省略形であることに注意。以下も同様
         content,
-        coverImageURL,
+        coverImageKey,
       },
     });
 
@@ -71,6 +83,17 @@ export const PUT = async (req: NextRequest, routeParams: RouteParams) => {
 };
 
 export const DELETE = async (req: NextRequest, routeParams: RouteParams) => {
+  // 認証チェック
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
+  }
+
+  const { data, error } = await supabase.auth.getUser(authHeader);
+  if (error || !data.user) {
+    return NextResponse.json({ error: "認証に失敗しました" }, { status: 401 });
+  }
+
   try {
     const { id } = await routeParams.params;
     const post: Post = await prisma.post.delete({

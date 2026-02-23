@@ -1,20 +1,32 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 import type { Post } from "@/generated/prisma/client";
+import { supabase } from "@/utils/supabase";
 
 type RequestBody = {
   title: string;
   content: string;
-  coverImageURL: string;
+  coverImageKey: string;
   categoryIds: string[];
 };
 
 export const POST = async (req: NextRequest) => {
+  // 認証チェック
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
+  }
+
+  const { data, error } = await supabase.auth.getUser(authHeader);
+  if (error || !data.user) {
+    return NextResponse.json({ error: "認証に失敗しました" }, { status: 401 });
+  }
+
   try {
     const requestBody: RequestBody = await req.json();
 
     // 分割代入
-    const { title, content, coverImageURL, categoryIds } = requestBody;
+    const { title, content, coverImageKey, categoryIds } = requestBody;
 
     // categoryIds で指定されるカテゴリがDB上に存在するか確認
     const categories = await prisma.category.findMany({
@@ -36,7 +48,7 @@ export const POST = async (req: NextRequest) => {
       data: {
         title, // title: title の省略形であることに注意。以下も同様
         content,
-        coverImageURL,
+        coverImageKey,
       },
     });
 
