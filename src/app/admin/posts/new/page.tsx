@@ -2,336 +2,287 @@
 import { useState, useEffect, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import {
+  faSpinner,
+  faLink,
+  faCode,
+  faGlobe,
+} from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import { useAuth } from "@/app/_hooks/useAuth";
 import { supabase } from "@/utils/supabase";
 
 const bucketName = "cover-image";
 
-// カテゴリをフェッチしたときのレスポンスのデータ型
-type CategoryApiResponse = {
-  id: string;
-  name: string;
-  createdAt: string;
-  updatedAt: string;
+type CategoryApiResponse = { id: string; name: string };
+type SelectableCategory = { id: string; name: string; isSelect: boolean };
+type OgpData = {
+  title: string | null;
+  description: string | null;
+  image: string | null;
 };
 
-// 投稿記事のカテゴリ選択用のデータ型
-type SelectableCategory = {
-  id: string;
-  name: string;
-  isSelect: boolean;
-};
-
-// 投稿記事の新規作成のページ
 const Page: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const { token, isLoading: authIsLoading, session } = useAuth();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [fetchErrorMsg, setFetchErrorMsg] = useState<string | null>(null);
+  const [isFetchingOgp, setIsFetchingOgp] = useState(false);
 
-  const [newTitle, setNewTitle] = useState("");
-  const [newContent, setNewContent] = useState("");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [postType, setPostType] = useState<"KNOWLEDGE" | "PROJECT">("KNOWLEDGE");
+  const [repoUrl, setRepoUrl] = useState("");
+  const [demoUrl, setDemoUrl] = useState("");
+  const [published, setPublished] = useState(true);
   const [coverImageKey, setCoverImageKey] = useState<string | undefined>();
   const [coverImageUrl, setCoverImageUrl] = useState<string | undefined>();
+  const [ogpData, setOgpData] = useState<OgpData | null>(null);
+  const [checkableCategories, setCheckableCategories] = useState<SelectableCategory[]>([]);
 
-  const { token, isLoading: authIsLoading, session } = useAuth();
-  const router = useRouter();
-
-  // 認証チェック
   useEffect(() => {
     if (!authIsLoading && !session) {
-      window.alert("記事を投稿するにはログインが必要です");
+      window.alert("ログインが必要です");
       router.push("/login");
     }
   }, [authIsLoading, session, router]);
 
-  // カテゴリ配列 (State)。取得中と取得失敗時は null、既存カテゴリが0個なら []
-  const [checkableCategories, setCheckableCategories] = useState<
-    SelectableCategory[] | null
-  >(null);
-
-  // コンポーネントがマウントされたとき (初回レンダリングのとき) に1回だけ実行
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setIsLoading(true);
-        const requestUrl = "/api/categories";
-        const res = await fetch(requestUrl, {
-          method: "GET",
-          cache: "no-store",
-        });
-
-        if (!res.ok) {
-          setCheckableCategories(null);
-          throw new Error(`${res.status}: ${res.statusText}`);
-        }
-
-        const apiResBody = (await res.json()) as CategoryApiResponse[];
-        setCheckableCategories(
-          apiResBody.map((body) => ({
-            id: body.id,
-            name: body.name,
-            isSelect: false,
-          })),
-        );
-      } catch (error) {
-        const errorMsg =
-          error instanceof Error
-            ? `カテゴリの一覧のフェッチに失敗しました: ${error.message}`
-            : `予期せぬエラーが発生しました ${error}`;
-        console.error(errorMsg);
-        setFetchErrorMsg(errorMsg);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCategories();
+    fetch("/api/categories", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data: CategoryApiResponse[]) =>
+        setCheckableCategories(data.map((c) => ({ ...c, isSelect: false }))),
+      );
   }, []);
 
-  // チェックボックスの状態 (State) を更新する関数
-  const switchCategoryState = (categoryId: string) => {
-    if (!checkableCategories) return;
-
-    setCheckableCategories(
-      checkableCategories.map((category) =>
-        category.id === categoryId
-          ? { ...category, isSelect: !category.isSelect }
-          : category,
-      ),
-    );
-  };
-
-  // 画像ファイル選択・アップロード処理
   const handleImageChange = async (e: ChangeEvent<HTMLInputElement>) => {
     setCoverImageKey(undefined);
     setCoverImageUrl(undefined);
-
     if (!e.target.files || e.target.files.length === 0) return;
-
     const file = e.target.files[0];
-    const path = `private/${file.name}`;
-
     setIsUploading(true);
     try {
       const { data, error } = await supabase.storage
         .from(bucketName)
-        .upload(path, file, { upsert: true });
-
+        .upload(`private/${file.name}`, file, { upsert: true });
       if (error || !data) {
-        window.alert(`アップロードに失敗しました: ${error?.message}`);
+        window.alert(`アップロード失敗: ${error?.message}`);
         return;
       }
-
       setCoverImageKey(data.path);
-      const publicUrlResult = supabase.storage
-        .from(bucketName)
-        .getPublicUrl(data.path);
-      setCoverImageUrl(publicUrlResult.data.publicUrl);
+      const { data: urlData } = supabase.storage.from(bucketName).getPublicUrl(data.path);
+      setCoverImageUrl(urlData.publicUrl);
     } finally {
       setIsUploading(false);
     }
   };
 
-  // フォームの送信処理
+  const fetchOgp = async (url: string) => {
+    if (!url) return;
+    setIsFetchingOgp(true);
+    try {
+      const res = await fetch(`/api/ogp?url=${encodeURIComponent(url)}`);
+      if (res.ok) setOgpData(await res.json());
+    } finally {
+      setIsFetchingOgp(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (!token) {
-      window.alert("トークンが取得できません。もう一度ログインしてください。");
-      return;
-    }
-
-    if (!session) {
-      window.alert("セッションが無効です。ログインしてください。");
-      return;
-    }
-
-    if (!coverImageKey) {
-      window.alert("カバー画像をアップロードしてください。");
-      return;
-    }
-
+    if (!token) { window.alert("ログインしてください"); return; }
     setIsSubmitting(true);
-
     try {
-      const requestBody = {
-        title: newTitle,
-        content: newContent,
-        coverImageKey,
-        categoryIds: checkableCategories
-          ? checkableCategories.filter((c) => c.isSelect).map((c) => c.id)
-          : [],
-      };
-      const requestUrl = "/api/admin/posts";
-      console.log(`${requestUrl} => ${JSON.stringify(requestBody, null, 2)}`);
-      const res = await fetch(requestUrl, {
+      const res = await fetch("/api/admin/posts", {
         method: "POST",
-        cache: "no-store",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token,
-        },
-        body: JSON.stringify(requestBody),
+        headers: { "Content-Type": "application/json", Authorization: token },
+        body: JSON.stringify({
+          title,
+          content,
+          postType,
+          repoUrl: repoUrl || undefined,
+          demoUrl: demoUrl || undefined,
+          coverImageKey,
+          published,
+          categoryIds: checkableCategories.filter((c) => c.isSelect).map((c) => c.id),
+        }),
       });
-
-      if (!res.ok) {
-        throw new Error(`${res.status}: ${res.statusText}`);
-      }
-
-      const postResponse = await res.json();
-      setIsSubmitting(false);
-      router.push(`/posts/${postResponse.id}`);
+      if (!res.ok) throw new Error((await res.json()).error);
+      const post = await res.json();
+      router.push(`/posts/${post.id}`);
     } catch (error) {
-      const errorMsg =
-        error instanceof Error
-          ? `投稿記事のPOSTリクエストに失敗しました\n${error.message}`
-          : `予期せぬエラーが発生しました\n${error}`;
-      console.error(errorMsg);
-      window.alert(errorMsg);
+      window.alert(`投稿失敗: ${error instanceof Error ? error.message : error}`);
+    } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-10 text-slate-400">
-        <FontAwesomeIcon icon={faSpinner} className="animate-spin text-2xl" />
-      </div>
-    );
-  }
-
-  if (!session) {
-    return (
-      <div className="py-10 text-center text-red-500">
-        記事を投稿するにはログインが必要です
-      </div>
-    );
-  }
+  if (!session && !authIsLoading) return null;
 
   return (
-    <main>
-      <div className="mb-4 text-2xl font-bold">投稿記事の新規作成</div>
+    <main className="mx-auto max-w-3xl pb-20">
+      <h1 className="mb-8 text-3xl font-black tracking-tight text-slate-800">
+        新規投稿
+      </h1>
 
       {(isSubmitting || isUploading) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="flex items-center rounded-lg bg-white px-8 py-4 shadow-lg">
-            <FontAwesomeIcon
-              icon={faSpinner}
-              className="mr-2 animate-spin text-gray-500"
-            />
-            <div className="flex items-center text-gray-500">
-              {isUploading ? "アップロード中..." : "処理中..."}
-            </div>
+          <div className="flex items-center gap-2 rounded-lg bg-white px-8 py-4 shadow-lg text-gray-500">
+            <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+            {isUploading ? "アップロード中..." : "投稿中..."}
           </div>
         </div>
       )}
 
-      <form
-        onSubmit={handleSubmit}
-        className={twMerge("space-y-4", isSubmitting && "opacity-50")}
-      >
-        <div className="space-y-1">
-          <label htmlFor="title" className="block font-bold">
-            タイトル
-          </label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            className="w-full rounded-md border-2 px-2 py-1"
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            placeholder="タイトルを記入してください"
-            required
-          />
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* 投稿タイプ */}
+        <div className="flex gap-3">
+          {(["KNOWLEDGE", "PROJECT"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setPostType(t)}
+              className={twMerge(
+                "flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-black transition-all",
+                postType === t
+                  ? "border-indigo-600 bg-indigo-600 text-white"
+                  : "border-slate-200 text-slate-500 hover:border-indigo-300",
+              )}
+            >
+              <FontAwesomeIcon icon={t === "KNOWLEDGE" ? faCode : faGlobe} />
+              {t === "KNOWLEDGE" ? "知見共有" : "作品共有"}
+            </button>
+          ))}
         </div>
 
-        <div className="space-y-1">
-          <label htmlFor="content" className="block font-bold">
-            本文
-          </label>
-          <textarea
-            id="content"
-            name="content"
-            className="h-48 w-full rounded-md border-2 px-2 py-1"
-            value={newContent}
-            onChange={(e) => setNewContent(e.target.value)}
-            placeholder="本文を記入してください"
-            required
-          />
-        </div>
+        {/* タイトル */}
+        <input
+          type="text"
+          placeholder="タイトル"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          required
+          className="w-full rounded-2xl border border-slate-200 px-5 py-4 text-xl font-bold focus:border-indigo-500 focus:outline-none"
+        />
 
-        {/* 画像アップロード */}
+        {/* 本文（Markdown） */}
         <div className="space-y-2">
-          <label className="block font-bold">カバー画像</label>
+          <label className="text-sm font-bold text-slate-700">本文（Markdown 対応）</label>
+          <textarea
+            placeholder="## 見出し&#10;&#10;本文を Markdown で書いてください..."
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            required
+            className="h-64 w-full resize-none rounded-2xl border border-slate-200 px-5 py-4 font-mono text-sm leading-relaxed focus:border-indigo-500 focus:outline-none"
+          />
+        </div>
+
+        {/* PROJECT の場合のみ URL 入力 */}
+        {postType === "PROJECT" && (
+          <div className="space-y-3 rounded-2xl border border-slate-200 p-5">
+            <p className="text-sm font-bold text-slate-700">プロジェクト URL</p>
+            <div className="flex items-center gap-3">
+              <FontAwesomeIcon icon={faLink} className="text-slate-400" />
+              <input
+                type="url"
+                placeholder="GitHub リポジトリ URL"
+                value={repoUrl}
+                onChange={(e) => setRepoUrl(e.target.value)}
+                className="flex-1 rounded-xl border border-slate-200 px-4 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <FontAwesomeIcon icon={faGlobe} className="text-slate-400" />
+              <input
+                type="url"
+                placeholder="デモサイト URL"
+                value={demoUrl}
+                onChange={(e) => {
+                  setDemoUrl(e.target.value);
+                  setOgpData(null);
+                }}
+                onBlur={(e) => fetchOgp(e.target.value)}
+                className="flex-1 rounded-xl border border-slate-200 px-4 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+              />
+              {isFetchingOgp && <FontAwesomeIcon icon={faSpinner} className="animate-spin text-slate-400" />}
+            </div>
+            {/* OGP プレビュー */}
+            {ogpData && (
+              <div className="mt-2 flex gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                {ogpData.image && (
+                  <img src={ogpData.image} alt="" className="h-16 w-16 rounded-lg object-cover" />
+                )}
+                <div>
+                  <p className="text-sm font-bold text-slate-800">{ogpData.title}</p>
+                  <p className="mt-0.5 text-xs text-slate-500 line-clamp-2">{ogpData.description}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* カバー画像 */}
+        <div className="space-y-2">
+          <label className="text-sm font-bold text-slate-700">カバー画像（任意）</label>
           <input
-            id="imgSelector"
             type="file"
             accept="image/*"
             onChange={handleImageChange}
             disabled={isUploading}
-            className={twMerge(
-              "file:rounded file:px-2 file:py-1",
-              "file:bg-indigo-500 file:text-white hover:file:bg-indigo-600",
-              "file:cursor-pointer",
-            )}
+            className="file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-1.5 file:text-sm file:font-bold file:text-indigo-600 hover:file:bg-indigo-100"
           />
           {coverImageUrl && (
-            <div className="mt-2">
-              <img
-                src={coverImageUrl}
-                alt="カバー画像プレビュー"
-                className="h-40 w-full rounded-md object-cover"
-              />
-              <p className="mt-1 break-all text-xs text-slate-500">
-                key: {coverImageKey}
-              </p>
-            </div>
+            <img src={coverImageUrl} alt="preview" className="h-32 w-full rounded-xl object-cover" />
           )}
         </div>
 
-        <div className="space-y-1">
-          <div className="font-bold">タグ</div>
-          <div className="flex flex-wrap gap-x-3.5">
-            {checkableCategories && checkableCategories.length > 0 ? (
-              checkableCategories.map((c) => (
-                <label key={c.id} className="flex space-x-1">
-                  <input
-                    id={c.id}
-                    type="checkbox"
-                    checked={c.isSelect}
-                    className="mt-0.5 cursor-pointer"
-                    onChange={() => switchCategoryState(c.id)}
-                  />
-                  <span className="cursor-pointer">{c.name}</span>
-                </label>
-              ))
-            ) : (
-              <div>選択可能なカテゴリが存在しません。</div>
-            )}
+        {/* カテゴリ */}
+        <div className="space-y-2">
+          <label className="text-sm font-bold text-slate-700">カテゴリ</label>
+          <div className="flex flex-wrap gap-2">
+            {checkableCategories.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() =>
+                  setCheckableCategories(
+                    checkableCategories.map((cat) =>
+                      cat.id === c.id ? { ...cat, isSelect: !cat.isSelect } : cat,
+                    ),
+                  )
+                }
+                className={twMerge(
+                  "rounded-xl border px-4 py-1.5 text-xs font-black transition-all",
+                  c.isSelect
+                    ? "border-indigo-600 bg-indigo-600 text-white"
+                    : "border-slate-200 text-slate-500 hover:border-indigo-300",
+                )}
+              >
+                {c.name}
+              </button>
+            ))}
           </div>
         </div>
 
-        {fetchErrorMsg && (
-          <div className="text-sm text-red-500">{fetchErrorMsg}</div>
-        )}
+        {/* 公開設定 */}
+        <label className="flex cursor-pointer items-center gap-3">
+          <input
+            type="checkbox"
+            checked={published}
+            onChange={(e) => setPublished(e.target.checked)}
+            className="h-4 w-4 rounded"
+          />
+          <span className="text-sm font-bold text-slate-700">すぐに公開する（チェックを外すと下書き保存）</span>
+        </label>
 
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            className={twMerge(
-              "rounded-md px-5 py-1 font-bold",
-              "bg-indigo-500 text-white hover:bg-indigo-600",
-              "disabled:cursor-not-allowed",
-            )}
-            disabled={isSubmitting || isUploading || !coverImageKey}
-          >
-            記事を投稿
-          </button>
-        </div>
+        <button
+          type="submit"
+          disabled={isSubmitting || isUploading || !title || !content}
+          className="w-full rounded-2xl bg-slate-900 py-4 font-black text-white transition hover:bg-slate-800 disabled:opacity-50"
+        >
+          {isSubmitting ? <FontAwesomeIcon icon={faSpinner} className="animate-spin" /> : "投稿する"}
+        </button>
       </form>
     </main>
   );

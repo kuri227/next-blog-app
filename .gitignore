@@ -42,3 +42,5 @@ next-env.d.ts
 
 devtools/httpyac
 # /src/generated/prisma
+
+plan.txt

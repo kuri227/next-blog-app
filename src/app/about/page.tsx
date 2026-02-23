@@ -9,8 +9,8 @@ import {
   faGamepad,
   faMicrochip,
   faAward,
+  faArrowUpRightFromSquare,
 } from "@fortawesome/free-solid-svg-icons";
-import { faGithub } from "@fortawesome/free-brands-svg-icons";
 
 const AboutPage: React.FC = () => {
   const skills = ["Python", "C++", "C", "HTML", "CSS", "TypeScript"];
@@ -60,7 +60,7 @@ const AboutPage: React.FC = () => {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white hover:text-slate-900"
               >
-                <FontAwesomeIcon icon={faGithub} /> GitHub
+                <FontAwesomeIcon icon={faArrowUpRightFromSquare} /> GitHub
               </a>
               <a
                 href="https://kuri227.github.io/PG1-portfolio/"

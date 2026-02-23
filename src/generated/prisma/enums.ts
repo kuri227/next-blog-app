@@ -9,7 +9,17 @@
 * 🟢 You can import this file directly.
 */
 
+export const UserRole = {
+  ADMIN: 'ADMIN',
+  USER: 'USER'
+} as const
+
+export type UserRole = (typeof UserRole)[keyof typeof UserRole]
 
 
-// This file is empty because there are no enums in the schema.
-export {}
+export const PostType = {
+  PROJECT: 'PROJECT',
+  KNOWLEDGE: 'KNOWLEDGE'
+} as const
+
+export type PostType = (typeof PostType)[keyof typeof PostType]

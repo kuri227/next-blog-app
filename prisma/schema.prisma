@@ -1,9 +1,8 @@
 // このファイルを更新したら...
 // 0. `npm run dev` や `npx prisma studio` を停止
-// 1. dev.db を削除
-// 2. npx prisma db push
-// 3. npx prisma generate
-// 4. npx prisma db seed
+// 1. npx prisma db push --force-reset
+// 2. npx prisma generate
+// 3. VSCode: Developer: Reload Window
 
 generator client {
   provider = "prisma-client"
@@ -14,33 +13,115 @@ datasource db {
   provider = "postgresql"
 }
 
+// ユーザーロール
+enum UserRole {
+  ADMIN
+  USER
+}
+
+// 投稿タイプ
+enum PostType {
+  PROJECT   // 作品共有
+  KNOWLEDGE // 知見共有
+}
+
+// ユーザーテーブル（Supabase Auth と連携）
+model User {
+  id         String   @id @default(uuid())
+  supabaseId String   @unique        // Supabase の auth.users.id
+  email      String   @unique
+  name       String?
+  avatarUrl  String?                 // GitHub アバター URL
+  role       UserRole @default(USER)
+  bio        String?
+  githubUrl  String?
+  posts      Post[]
+  comments   Comment[]
+  likes      Like[]
+  bookmarks  Bookmark[]
+  following  Follow[]  @relation("follower")
+  followers  Follow[]  @relation("following")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// フォロー（ユーザー間の多対多・自己参照）
+model Follow {
+  followerId  String
+  followingId String
+  follower    User     @relation("follower",  fields: [followerId],  references: [id], onDelete: Cascade)
+  following   User     @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  @@id([followerId, followingId])
+}
+
 // 投稿記事テーブル
 model Post {
-  id             String @id @default(uuid())
-  title          String
-  content        String
-  coverImageKey  String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  categories     PostCategory[]
+  id            String   @id @default(uuid())
+  title         String
+  content       String
+  postType      PostType @default(KNOWLEDGE)
+  repoUrl       String?
+  demoUrl       String?
+  coverImageKey String?
+  published     Boolean  @default(false)
+  authorId      String
+  author        User     @relation(fields: [authorId], references: [id])
+  categories    PostCategory[]
+  comments      Comment[]
+  likes         Like[]
+  bookmarks     Bookmark[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 // カテゴリテーブル
 model Category {
-  id         String @id @default(uuid())
-  name       String @unique
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  posts      PostCategory[]
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  posts     PostCategory[]
 }
 
 // 投稿記事とカテゴリを紐づける中間テーブル
 model PostCategory {
-  id          String @id @default(uuid())
-  postId      String
-  categoryId  String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  postId     String
+  categoryId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  post       Post     @relation(fields: [postId],     references: [id], onDelete: Cascade)
+}
+
+// コメントテーブル
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  postId    String
+  authorId  String
+  post      Post     @relation(fields: [postId],    references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId],  references: [id])
+  createdAt DateTime @default(now())
+}
+
+// いいねテーブル（ユーザー × 投稿の複合主キー）
+model Like {
+  userId    String
+  postId    String
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@id([userId, postId])
+}
+
+// ブックマークテーブル（ユーザー × 投稿の複合主キー）
+model Bookmark {
+  userId    String
+  postId    String
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@id([userId, postId])
 }

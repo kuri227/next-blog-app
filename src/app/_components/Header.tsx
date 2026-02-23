@@ -11,6 +11,9 @@ import {
   faTableList,
   faTags,
   faFish,
+  faRss,
+  faBookmark,
+  faPenToSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import { supabase } from "@/utils/supabase"; // ◀ 追加
@@ -20,7 +23,7 @@ import { useRouter } from "next/navigation"; // ◀ 追加
 const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
-  const { isLoading, session } = useAuth();
+  const { isLoading, session, dbUser } = useAuth();
   const logout = async () => {
     await supabase.auth.signOut();
     router.replace("/");
@@ -88,56 +91,53 @@ const Header: React.FC = () => {
 
           {/* メインナビゲーション */}
           <nav className="flex-1 space-y-2">
-            <Link
-              href="/"
-              onClick={toggleMenu}
-              className="group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600"
-            >
-              <FontAwesomeIcon
-                icon={faHouse}
-                className="w-5 text-slate-400 group-hover:text-indigo-500"
-              />
+            <Link href="/" onClick={toggleMenu}
+              className="group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600">
+              <FontAwesomeIcon icon={faHouse} className="w-5 text-slate-400 group-hover:text-indigo-500" />
               ホーム
             </Link>
-            <Link
-              href="/about"
-              onClick={toggleMenu}
-              className="group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600"
-            >
-              <FontAwesomeIcon
-                icon={faUser}
-                className="w-5 text-slate-400 group-hover:text-indigo-500"
-              />
-              About
+            <Link href="/feed" onClick={toggleMenu}
+              className="group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600">
+              <FontAwesomeIcon icon={faRss} className="w-5 text-slate-400 group-hover:text-indigo-500" />
+              フィード
             </Link>
-            {!isLoading &&
-              (session ? (
-                <button
-                  onClick={() => {
-                    logout();
-                    toggleMenu();
-                  }}
-                  className="group flex w-full items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-slate-600 transition-all hover:bg-red-50 hover:text-red-600"
-                >
-                  <FontAwesomeIcon
-                    icon={faGear}
-                    className="w-5 text-slate-400 group-hover:text-red-500"
-                  />
+            {session && (
+              <>
+                <Link href="/admin/posts/new" onClick={toggleMenu}
+                  className="group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600">
+                  <FontAwesomeIcon icon={faPenToSquare} className="w-5 text-slate-400 group-hover:text-indigo-500" />
+                  新規投稿
+                </Link>
+                <Link href="/bookmarks" onClick={toggleMenu}
+                  className="group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600">
+                  <FontAwesomeIcon icon={faBookmark} className="w-5 text-slate-400 group-hover:text-indigo-500" />
+                  ブックマーク
+                </Link>
+                {dbUser && (
+                  <Link href={`/profile/${dbUser.id}`} onClick={toggleMenu}
+                    className="group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600">
+                    {dbUser.avatarUrl ? (
+                      <img src={dbUser.avatarUrl} alt="" className="h-5 w-5 rounded-full" />
+                    ) : (
+                      <FontAwesomeIcon icon={faUser} className="w-5 text-slate-400 group-hover:text-indigo-500" />
+                    )}
+                    マイプロフィール
+                  </Link>
+                )}
+                <button onClick={() => { logout(); toggleMenu(); }}
+                  className="group flex w-full items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-slate-600 transition-all hover:bg-red-50 hover:text-red-600">
+                  <FontAwesomeIcon icon={faGear} className="w-5 text-slate-400 group-hover:text-red-500" />
                   ログアウト
                 </button>
-              ) : (
-                <Link
-                  href="/login"
-                  onClick={toggleMenu}
-                  className="group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600"
-                >
-                  <FontAwesomeIcon
-                    icon={faGear}
-                    className="w-5 text-slate-400 group-hover:text-indigo-500"
-                  />
-                  ログイン
-                </Link>
-              ))}
+              </>
+            )}
+            {!isLoading && !session && (
+              <Link href="/login" onClick={toggleMenu}
+                className="group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-slate-600 transition-all hover:bg-indigo-50 hover:text-indigo-600">
+                <FontAwesomeIcon icon={faGear} className="w-5 text-slate-400 group-hover:text-indigo-500" />
+                ログイン
+              </Link>
+            )}
           </nav>
 
           {/* 管理画面用セクション：ロマン枠 */}

@@ -1,74 +1,88 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
-import type { Post } from "@/generated/prisma/client";
 import { supabase } from "@/utils/supabase";
 
 type RouteParams = {
-  params: Promise<{
-    id: string;
-  }>;
+  params: Promise<{ id: string }>;
 };
 
 type RequestBody = {
   title: string;
   content: string;
-  coverImageKey: string;
+  coverImageKey?: string;
   categoryIds: string[];
+  postType: "PROJECT" | "KNOWLEDGE";
+  repoUrl?: string;
+  demoUrl?: string;
+  published: boolean;
+};
+
+const getDbUser = async (authHeader: string) => {
+  const { data, error } = await supabase.auth.getUser(authHeader);
+  if (error || !data.user) return null;
+  return prisma.user.findUnique({ where: { supabaseId: data.user.id } });
 };
 
 export const PUT = async (req: NextRequest, routeParams: RouteParams) => {
-  // 認証チェック
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
     return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
   }
 
-  const { data, error } = await supabase.auth.getUser(authHeader);
-  if (error || !data.user) {
+  const dbUser = await getDbUser(authHeader);
+  if (!dbUser) {
     return NextResponse.json({ error: "認証に失敗しました" }, { status: 401 });
   }
 
   try {
     const { id } = await routeParams.params;
+
+    // 投稿の存在確認と権限チェック
+    const existing = await prisma.post.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "投稿が見つかりません" }, { status: 404 });
+    }
+    if (existing.authorId !== dbUser.id && dbUser.role !== "ADMIN") {
+      return NextResponse.json({ error: "権限がありません" }, { status: 403 });
+    }
+
     const requestBody: RequestBody = await req.json();
+    const {
+      title,
+      content,
+      coverImageKey,
+      categoryIds,
+      postType,
+      repoUrl,
+      demoUrl,
+      published,
+    } = requestBody;
 
-    // 分割代入
-    const { title, content, coverImageKey, categoryIds } = requestBody;
-
-    // categoryIds に該当するカテゴリが存在するか確認
     const categories = await prisma.category.findMany({
-      where: {
-        id: {
-          in: categoryIds,
-        },
-      },
+      where: { id: { in: categoryIds } },
     });
     if (categories.length !== categoryIds.length) {
       throw new Error("指定されたカテゴリが存在しません");
     }
 
-    // 中間テーブルのレコードを削除
-    await prisma.postCategory.deleteMany({
-      where: { postId: id },
-    });
+    await prisma.postCategory.deleteMany({ where: { postId: id } });
 
-    // 投稿記事テーブルにレコードを追加
-    const post: Post = await prisma.post.update({
+    const post = await prisma.post.update({
       where: { id },
       data: {
-        title, // title: title の省略形であることに注意。以下も同様
+        title,
         content,
-        coverImageKey,
+        coverImageKey: coverImageKey ?? null,
+        postType,
+        repoUrl: repoUrl ?? null,
+        demoUrl: demoUrl ?? null,
+        published,
       },
     });
 
-    // 中間テーブルにレコードを追加
     for (const categoryId of categoryIds) {
       await prisma.postCategory.create({
-        data: {
-          postId: post.id,
-          categoryId: categoryId,
-        },
+        data: { postId: post.id, categoryId },
       });
     }
 
@@ -83,22 +97,28 @@ export const PUT = async (req: NextRequest, routeParams: RouteParams) => {
 };
 
 export const DELETE = async (req: NextRequest, routeParams: RouteParams) => {
-  // 認証チェック
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
     return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
   }
 
-  const { data, error } = await supabase.auth.getUser(authHeader);
-  if (error || !data.user) {
+  const dbUser = await getDbUser(authHeader);
+  if (!dbUser) {
     return NextResponse.json({ error: "認証に失敗しました" }, { status: 401 });
   }
 
   try {
     const { id } = await routeParams.params;
-    const post: Post = await prisma.post.delete({
-      where: { id },
-    });
+
+    const existing = await prisma.post.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "投稿が見つかりません" }, { status: 404 });
+    }
+    if (existing.authorId !== dbUser.id && dbUser.role !== "ADMIN") {
+      return NextResponse.json({ error: "権限がありません" }, { status: 403 });
+    }
+
+    const post = await prisma.post.delete({ where: { id } });
     return NextResponse.json({ msg: `「${post.title}」を削除しました。` });
   } catch (error) {
     console.error(error);

@@ -4,26 +4,39 @@ import { NextResponse, NextRequest } from "next/server";
 export const GET = async (req: NextRequest) => {
   try {
     const posts = await prisma.post.findMany({
+      where: { published: true },
       select: {
         id: true,
         title: true,
         content: true,
-        coverImageKey: true, // ◀ Supabase Storage のパスを取得
+        postType: true,
+        repoUrl: true,
+        demoUrl: true,
+        coverImageKey: true,
         createdAt: true,
+        author: {
+          select: {
+            id: true,
+            name: true,
+            avatarUrl: true,
+          },
+        },
         categories: {
           select: {
             category: {
-              select: {
-                id: true,
-                name: true,
-              },
+              select: { id: true, name: true },
             },
           },
         },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+            bookmarks: true,
+          },
+        },
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: { createdAt: "desc" },
     });
     return NextResponse.json(posts);
   } catch (error) {

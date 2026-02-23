@@ -2,41 +2,50 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 
 type RouteParams = {
-  params: Promise<{
-    id: string;
-  }>;
+  params: Promise<{ id: string }>;
 };
 
 export const GET = async (req: NextRequest, routeParams: RouteParams) => {
   try {
-    // パラメータプレースホルダから id を取得
     const { id } = await routeParams.params;
 
-    // findUnique は id に一致する「1件」のレコードを取得するメソッド
-    // もし条件に一致するレコードが存在しないときは null が戻り値となる
     const post = await prisma.post.findUnique({
       where: { id },
       select: {
         id: true,
         title: true,
         content: true,
+        postType: true,
+        repoUrl: true,
+        demoUrl: true,
         coverImageKey: true,
+        published: true,
         createdAt: true,
         updatedAt: true,
+        author: {
+          select: {
+            id: true,
+            name: true,
+            avatarUrl: true,
+            githubUrl: true,
+          },
+        },
         categories: {
           select: {
             category: {
-              select: {
-                id: true,
-                name: true,
-              },
+              select: { id: true, name: true },
             },
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
           },
         },
       },
     });
 
-    // 投稿記事が存在しないときの ( post が null のときの) 処理
     if (!post) {
       return NextResponse.json(
         { error: `id='${id}'の投稿記事は見つかりませんでした` },
