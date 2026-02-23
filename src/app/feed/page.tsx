@@ -90,6 +90,16 @@ const Page: React.FC = () => {
         <div className="flex justify-center py-20 text-slate-300">
           <FontAwesomeIcon icon={faSpinner} className="animate-spin text-3xl" />
         </div>
+      ) : tab === "following" && !dbUser ? (
+        <div className="py-20 text-center">
+          <p className="text-5xl mb-4">🔒</p>
+          <p className="text-lg font-black text-slate-700">ログインが必要です</p>
+          <p className="mt-2 text-sm text-slate-500">フォロー中の投稿を見るには GitHub でログインしてください</p>
+          <Link href="/login"
+            className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-bold text-white hover:bg-slate-700">
+            ログインする →
+          </Link>
+        </div>
       ) : posts.length === 0 ? (
         <div className="py-20 text-center text-slate-400">
           <p className="text-lg font-bold">まだ投稿がありません</p>
@@ -104,14 +114,14 @@ const Page: React.FC = () => {
               <Link
                 key={post.id}
                 href={`/posts/${post.id}`}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5"
+                className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 dark:border-slate-700 dark:bg-slate-800"
               >
                 {/* カバー画像 */}
-                <div className="relative aspect-video overflow-hidden bg-slate-100">
+                <div className="relative aspect-video overflow-hidden bg-slate-100 dark:bg-slate-700">
                   {coverUrl ? (
                     <img src={coverUrl} alt={post.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
                   ) : (
-                    <div className="flex h-full items-center justify-center text-slate-300">
+                    <div className="flex h-full items-center justify-center text-slate-300 dark:text-slate-500">
                       <span className="text-4xl">{post.postType === "PROJECT" ? "🛠️" : "📚"}</span>
                     </div>
                   )}
@@ -123,12 +133,12 @@ const Page: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex flex-1 flex-col gap-3 p-5">
-                  <h2 className="line-clamp-2 font-black text-slate-800 group-hover:text-indigo-600">
+                  <h2 className="line-clamp-2 font-black text-slate-800 group-hover:text-indigo-600 dark:text-slate-100">
                     {post.title}
                   </h2>
                   <div className="flex flex-wrap gap-1">
                     {post.categories.map((c) => (
-                      <span key={c.category.id} className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                      <span key={c.category.id} className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-700 dark:text-slate-300">
                         {c.category.name}
                       </span>
                     ))}

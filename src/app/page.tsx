@@ -90,14 +90,14 @@ const Page: React.FC = () => {
       </section>
 
       {/* ── 検索バー ──────────────────────────────────────── */}
-      <div className="mb-8 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+      <div className="mb-8 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <FontAwesomeIcon icon={faMagnifyingGlass} className="text-slate-400" />
         <input
           type="text"
           placeholder="記事タイトル・カテゴリで検索..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
+          className="flex-1 bg-transparent text-sm text-[var(--text-base)] outline-none placeholder:text-slate-400"
         />
       </div>
 
@@ -120,10 +120,10 @@ const Page: React.FC = () => {
               <Link
                 key={post.id}
                 href={`/posts/${post.id}`}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-slate-700 dark:bg-slate-800"
               >
                 {/* サムネイル */}
-                <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
+                <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800">
                   {coverUrl ? (
                     <img
                       src={coverUrl}
@@ -147,21 +147,21 @@ const Page: React.FC = () => {
 
                 {/* コンテンツ */}
                 <div className="flex flex-1 flex-col gap-3 p-5">
-                  <h2 className="line-clamp-2 font-black leading-snug text-slate-800 group-hover:text-indigo-600">
+                  <h2 className="line-clamp-2 font-black leading-snug text-slate-800 group-hover:text-indigo-600 dark:text-slate-100">
                     {post.title}
                   </h2>
                   {/* カテゴリ */}
                   <div className="flex flex-wrap gap-1">
                     {post.categories.slice(0, 3).map((c) => (
                       <span key={c.category.id}
-                        className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                        className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-700 dark:text-slate-300">
                         {c.category.name}
                       </span>
                     ))}
                   </div>
                   {/* フッター */}
-                  <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-3">
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-700">
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                       {post.author.avatarUrl ? (
                         <img src={post.author.avatarUrl} alt="" className="h-5 w-5 rounded-full" />
                       ) : null}

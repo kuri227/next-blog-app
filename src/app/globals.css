@@ -1,29 +1,184 @@
 @import "tailwindcss";
-@import "tailwindcss";
 
-/* 全体の背景を少しグレーにして、コンテンツ（白）を際立たせる */
+/* ── ダークモード variant 定義 ──────────────────────────── */
+@variant dark (&:where(.dark, .dark *));
+
+/* ── CSS 変数（ライト / ダーク） ────────────────────────── */
+:root {
+  --bg-base:    #f8fafc;   /* slate-50 */
+  --bg-card:    #ffffff;
+  --border:     #e2e8f0;   /* slate-200 */
+  --text-base:  #0f172a;   /* slate-900 */
+  --text-muted: #64748b;   /* slate-500 */
+}
+.dark {
+  --bg-base:    #0f172a;   /* slate-900 */
+  --bg-card:    #1e293b;   /* slate-800 */
+  --border:     #334155;   /* slate-700 */
+  --text-base:  #f1f5f9;   /* slate-100 */
+  --text-muted: #94a3b8;   /* slate-400 */
+}
+
+/* ── ベーススタイル ──────────────────────────────────────── */
 body {
-  @apply bg-slate-100 text-slate-800;
+  background-color: var(--bg-base);
+  color: var(--text-base);
+  transition: background-color 0.2s, color 0.2s;
 }
 
-/* 見出しのデフォルトスタイル */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  @apply font-bold text-slate-900;
+h1, h2, h3, h4, h5, h6 {
+  @apply font-bold;
+  color: var(--text-base);
 }
 
+/* ── スムーズスクロール ───────────────────────────────────── */
+html { scroll-behavior: smooth; }
+
+/* ── アイコンスピンアニメーション ────────────────────────── */
 @keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
-.animate-spin-slow {
-  animation: spin-slow 8s linear infinite;
+.animate-spin-slow { animation: spin-slow 8s linear infinite; }
+
+/* ── 読了プログレスバー ───────────────────────────────────── */
+#reading-progress {
+  position: fixed; top: 0; left: 0; z-index: 9999;
+  height: 3px;
+  background: linear-gradient(to right, #6366f1, #8b5cf6);
+  transition: width 0.1s linear;
 }
+
+/* ── Markdown prose ダーク対応 ───────────────────────────── */
+.dark .prose {
+  color: var(--text-base);
+}
+.dark .prose h1,
+.dark .prose h2,
+.dark .prose h3,
+.dark .prose h4 {
+  color: var(--text-base);
+}
+.dark .prose a { color: #818cf8; }
+.dark .prose strong { color: var(--text-base); }
+.dark .prose blockquote { border-color: #4f46e5; color: var(--text-muted); }
+.dark .prose code { background: #1e293b; color: #e2e8f0; }
+.dark .prose pre { background: #0f172a; }
+.dark .prose table th { background: #1e293b; }
+.dark .prose table td, .dark .prose table th { border-color: #334155; }
+
+/* ── Markdown アドモニション ──────────────────────────────── */
+.admonition { border-radius: 0.75rem; padding: 1rem 1.25rem; margin: 1.25rem 0; display: flex; gap: 0.75rem; align-items: flex-start; }
+.admonition-icon { font-size: 1.1rem; line-height: 1.5; flex-shrink: 0; }
+.admonition-content { flex: 1; font-size: 0.9rem; line-height: 1.7; }
+.admonition-content strong { display: block; margin-bottom: 0.25rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.adm-note    { background: #eff6ff; border-left: 4px solid #3b82f6; }
+.adm-tip     { background: #f0fdf4; border-left: 4px solid #22c55e; }
+.adm-important { background: #faf5ff; border-left: 4px solid #a855f7; }
+.adm-warning { background: #fffbeb; border-left: 4px solid #f59e0b; }
+.adm-caution { background: #fff1f2; border-left: 4px solid #ef4444; }
+.dark .adm-note     { background: #1e3a5f; }
+.dark .adm-tip      { background: #14532d; }
+.dark .adm-important{ background: #3b0764; }
+.dark .adm-warning  { background: #451a03; }
+.dark .adm-caution  { background: #4c0519; }
+
+/* ── コードコピーボタン ────────────────────────────────────── */
+.code-block-wrapper { position: relative; }
+.code-copy-btn {
+  position: absolute; top: 0.5rem; right: 0.5rem;
+  padding: 0.25rem 0.6rem; border-radius: 0.375rem;
+  font-size: 0.7rem; font-weight: 700;
+  background: rgba(255,255,255,0.1); color: #94a3b8;
+  border: 1px solid rgba(255,255,255,0.1);
+  cursor: pointer; transition: all 0.15s;
+}
+.code-copy-btn:hover { background: rgba(255,255,255,0.2); color: #f1f5f9; }
+.code-copy-btn.copied { color: #4ade80; border-color: #4ade80; }
+
+/* ── Markdown prose テーブル ──────────────────────────────────── */
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  margin: 1.5rem 0;
+  display: block;
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+}
+.prose thead {
+  background: #f8fafc;
+}
+.prose thead th {
+  padding: 0.65rem 1.1rem;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+.prose tbody td {
+  padding: 0.65rem 1.1rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: top;
+  color: #334155;
+  line-height: 1.6;
+}
+.prose tbody tr:last-child td { border-bottom: none; }
+.prose tbody tr:nth-child(even) { background: #fafafa; }
+.dark .prose table { border-color: #334155; }
+.dark .prose thead { background: #1e293b; }
+.dark .prose thead th { color: #94a3b8; border-bottom-color: #334155; }
+.dark .prose tbody td { border-bottom-color: #1e293b; color: #cbd5e1; }
+.dark .prose tbody tr:nth-child(even) { background: #1a2535; }
+
+/* ── prose 見出し ─────────────────────────────────────────────── */
+.prose h2 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.4rem;
+}
+.prose h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+.dark .prose h2 { border-bottom-color: #334155; }
+
+/* ── prose インラインコード ────────────────────────────────────── */
+.prose :not(pre) > code {
+  background: #f1f5f9;
+  color: #d946ef;
+  padding: 0.15em 0.45em;
+  border-radius: 0.3rem;
+  font-size: 0.85em;
+  font-weight: 600;
+}
+.dark .prose :not(pre) > code { background: #1e293b; color: #e879f9; }
+
+/* ── prose pre ────────────────────────────────────────────────── */
+.prose pre {
+  border-radius: 0.75rem;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+  margin: 1.25rem 0;
+}
+
+/* ── prose リスト・段落・リンク・hr ─────────────────────────── */
+.prose ul { list-style: disc; padding-left: 1.5rem; margin: 0.75rem 0; }
+.prose ol { list-style: decimal; padding-left: 1.5rem; margin: 0.75rem 0; }
+.prose li { margin: 0.3rem 0; line-height: 1.7; }
+.prose p { margin: 0.9rem 0; line-height: 1.85; }
+.prose a { color: #6366f1; text-decoration: underline; font-weight: 600; }
+.prose a:hover { color: #4f46e5; }
+.dark .prose a { color: #818cf8; }
+.prose hr { border: none; border-top: 1px solid #e2e8f0; margin: 2rem 0; }
+.dark .prose hr { border-top-color: #334155; }

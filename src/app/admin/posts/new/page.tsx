@@ -1,26 +1,20 @@
 "use client";
-import { useState, useEffect, ChangeEvent } from "react";
+import { useState, useEffect, useRef, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faSpinner,
-  faLink,
-  faCode,
-  faGlobe,
+  faSpinner, faLink, faCode, faGlobe, faFloppyDisk,
 } from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import { useAuth } from "@/app/_hooks/useAuth";
 import { supabase } from "@/utils/supabase";
 
 const bucketName = "cover-image";
+const DRAFT_KEY = "techfeed_new_post_draft";
 
 type CategoryApiResponse = { id: string; name: string };
 type SelectableCategory = { id: string; name: string; isSelect: boolean };
-type OgpData = {
-  title: string | null;
-  description: string | null;
-  image: string | null;
-};
+type OgpData = { title: string | null; description: string | null; image: string | null; };
 
 const Page: React.FC = () => {
   const router = useRouter();
@@ -29,6 +23,7 @@ const Page: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isFetchingOgp, setIsFetchingOgp] = useState(false);
+  const [draftSaved, setDraftSaved] = useState(false);
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -40,6 +35,38 @@ const Page: React.FC = () => {
   const [coverImageUrl, setCoverImageUrl] = useState<string | undefined>();
   const [ogpData, setOgpData] = useState<OgpData | null>(null);
   const [checkableCategories, setCheckableCategories] = useState<SelectableCategory[]>([]);
+
+  // ── 下書き復元（初回マウント時） ──────────────────────────────
+  useEffect(() => {
+    const saved = localStorage.getItem(DRAFT_KEY);
+    if (!saved) return;
+    try {
+      const draft = JSON.parse(saved);
+      if (draft.title || draft.content) {
+        const ok = window.confirm("下書きが見つかりました。復元しますか？");
+        if (ok) {
+          if (draft.title) setTitle(draft.title);
+          if (draft.content) setContent(draft.content);
+          if (draft.postType) setPostType(draft.postType);
+        } else {
+          localStorage.removeItem(DRAFT_KEY);
+        }
+      }
+    } catch {}
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── 自動下書き保存（debounce 1s） ────────────────────────────
+  const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!title && !content) return;
+    if (draftTimer.current) clearTimeout(draftTimer.current);
+    draftTimer.current = setTimeout(() => {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ title, content, postType }));
+      setDraftSaved(true);
+      setTimeout(() => setDraftSaved(false), 2000);
+    }, 1000);
+    return () => { if (draftTimer.current) clearTimeout(draftTimer.current); };
+  }, [title, content, postType]);
 
   useEffect(() => {
     if (!authIsLoading && !session) {

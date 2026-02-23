@@ -2,20 +2,24 @@
 import { useState } from "react";
 import { supabase } from "@/utils/supabase";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faSpinner, faChevronDown } from "@fortawesome/free-solid-svg-icons";
+import { useRouter } from "next/navigation";
 
 const Page: React.FC = () => {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showAdminForm, setShowAdminForm] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isAdminLoading, setIsAdminLoading] = useState(false);
 
   const handleGitHubLogin = async () => {
     setIsLoading(true);
     setError("");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "github",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     if (error) {
       setError(error.message);
@@ -23,20 +27,29 @@ const Page: React.FC = () => {
     }
   };
 
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsAdminLoading(true);
+    setError("");
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setError(error.message);
+      setIsAdminLoading(false);
+    } else {
+      router.replace("/");
+    }
+  };
+
   return (
     <main className="flex min-h-[80vh] items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        {/* ロゴ＋タイトル */}
+        {/* ロゴ */}
         <div className="mb-10 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 text-2xl shadow-lg">
             ⚡
           </div>
-          <h1 className="text-2xl font-black text-slate-900">
-            TechFeed にログイン
-          </h1>
-          <p className="mt-2 text-sm text-slate-500">
-            GitHub アカウントで続ける
-          </p>
+          <h1 className="text-2xl font-black text-slate-900">TechFeed にログイン</h1>
+          <p className="mt-2 text-sm text-slate-500">GitHub アカウントで続ける</p>
         </div>
 
         {error && (
@@ -45,6 +58,7 @@ const Page: React.FC = () => {
           </div>
         )}
 
+        {/* GitHub ログイン */}
         <button
           onClick={handleGitHubLogin}
           disabled={isLoading}
@@ -60,12 +74,54 @@ const Page: React.FC = () => {
           GitHub でログインする
         </button>
 
+        {/* 管理者ログイン（折りたたみ） */}
+        <div className="mt-6">
+          <button
+            onClick={() => setShowAdminForm(!showAdminForm)}
+            className="flex w-full items-center justify-center gap-1.5 text-xs text-slate-400 hover:text-slate-600"
+          >
+            管理者としてログイン
+            <FontAwesomeIcon
+              icon={faChevronDown}
+              className={`text-[10px] transition-transform ${showAdminForm ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {showAdminForm && (
+            <form onSubmit={handleAdminLogin} className="mt-4 space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <input
+                type="email"
+                placeholder="メールアドレス"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-500 focus:outline-none"
+              />
+              <input
+                type="password"
+                placeholder="パスワード"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-500 focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={isAdminLoading}
+                className="w-full rounded-xl bg-slate-800 py-2.5 text-sm font-bold text-white hover:bg-slate-700 disabled:opacity-50"
+              >
+                {isAdminLoading
+                  ? <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                  : "管理者としてログイン"}
+              </button>
+            </form>
+          )}
+        </div>
+
         <p className="mt-6 text-center text-xs text-slate-400">
           ログインすることで
-          <a href="#" className="underline">利用規約</a>
-          および
-          <a href="#" className="underline">プライバシーポリシー</a>
-          に同意したものとみなします。
+          <a href="#" className="underline">利用規約</a>及び
+          <a href="#" className="underline">プライバシーポリシー</a>に同意したものとみなします。
         </p>
       </div>
     </main>
