@@ -5,26 +5,28 @@ import { supabase } from "@/utils/supabase";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 
-// GitHub OAuth ログイン後にここへリダイレクトされる
-// セッションを確立して / にリダイレクトする
+// GitHub OAuth (PKCE フロー) のコールバック処理
+// Supabase は ?code=xxx を URL に渡してくるので exchangeCodeForSession で処理する
 const Page: React.FC = () => {
   const router = useRouter();
 
   useEffect(() => {
     const handleCallback = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error("OAuth callback error:", error);
-        router.replace("/login");
-        return;
+      const code = new URLSearchParams(window.location.search).get("code");
+
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
+          console.error("OAuth callback error:", error.message);
+          router.replace("/login?error=" + encodeURIComponent(error.message));
+          return;
+        }
       }
-      if (data.session) {
-        // useAuth 内で syncUser が呼ばれるので、ここでは / に飛ばすだけ
-        router.replace("/");
-      } else {
-        router.replace("/login");
-      }
+
+      // セッション確立後 useAuth が syncUser → isOnboardingComplete チェックを行う
+      router.replace("/");
     };
+
     handleCallback();
   }, [router]);
 

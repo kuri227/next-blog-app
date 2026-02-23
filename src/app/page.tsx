@@ -57,7 +57,7 @@ const Page: React.FC = () => {
             <FontAwesomeIcon icon={faBolt} className="text-[10px]" />
             エンジニアのための知識共有プラットフォーム
           </div>
-          <h1 className="text-4xl font-black tracking-tight text-white sm:text-6xl">
+          <h1 className="text-4xl font-black tracking-tight !text-white drop-shadow-md sm:text-6xl">
             Tech<span className="text-indigo-400">Feed</span>
           </h1>
           <p className="mt-4 text-base font-medium text-slate-400 sm:text-lg">
