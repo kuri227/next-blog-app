@@ -5,6 +5,7 @@ import { config } from "@fortawesome/fontawesome-svg-core";
 config.autoAddCss = false;
 import Header from "@/app/_components/Header";
 import { ThemeProvider } from "@/app/_components/ThemeProvider";
+import { DevBanner } from "@/app/_components/DevBanner";
 
 export const metadata: Metadata = {
   title: "TechFeed",
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <footer className="mt-20 border-t border-[var(--border)] bg-[var(--bg-card)] py-10 text-center text-sm text-[var(--text-muted)]">
             &copy; 2026 TechFeed.
           </footer>
+          <DevBanner />
         </ThemeProvider>
       </body>
     </html>

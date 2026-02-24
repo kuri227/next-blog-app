@@ -2,8 +2,6 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 import { supabase } from "@/utils/supabase";
 
-// ログイン後にフロントエンドから呼び出す
-// Supabase の認証ユーザーを Prisma の User テーブルに同期する
 export const POST = async (req: NextRequest) => {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
@@ -12,6 +10,7 @@ export const POST = async (req: NextRequest) => {
 
   const { data, error } = await supabase.auth.getUser(authHeader);
   if (error || !data.user) {
+    console.error("[sync] Supabase getUser failed:", error?.message);
     return NextResponse.json({ error: "認証に失敗しました" }, { status: 401 });
   }
 
@@ -37,14 +36,24 @@ export const POST = async (req: NextRequest) => {
         githubUrl: meta?.user_name
           ? `https://github.com/${meta.user_name}`
           : null,
+        isOnboardingComplete: false,
+        skills: [],
+        techInterests: [],
       },
     });
 
     return NextResponse.json(user);
-  } catch (err) {
-    console.error(err);
+  } catch (err: unknown) {
+    // 詳細エラーをログ出力
+    if (err instanceof Error) {
+      console.error("[sync] Prisma error:", err.message);
+      console.error("[sync] Error name:", err.name);
+      console.error("[sync] Stack:", err.stack?.split("\n").slice(0, 5).join("\n"));
+    } else {
+      console.error("[sync] Unknown error:", JSON.stringify(err));
+    }
     return NextResponse.json(
-      { error: "ユーザー同期に失敗しました" },
+      { error: "ユーザー同期に失敗しました", detail: err instanceof Error ? err.message : String(err) },
       { status: 500 },
     );
   }

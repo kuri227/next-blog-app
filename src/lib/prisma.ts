@@ -4,8 +4,13 @@ import { Pool } from "pg";
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
-// Prisma 7 では PrismaPg に pg.Pool インスタンスを渡す
-const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
+// DATABASE_URL が未設定の場合は DIRECT_URL にフォールバック
+const connectionString = process.env.DATABASE_URL ?? process.env.DIRECT_URL;
+if (!connectionString) {
+  throw new Error("DATABASE_URL または DIRECT_URL が .env に設定されていません");
+}
+
+const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 
 export const prisma =

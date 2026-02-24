@@ -15,6 +15,11 @@ const Page: React.FC = () => {
   const [isAdminLoading, setIsAdminLoading] = useState(false);
 
   const handleGitHubLogin = async () => {
+    // localhost では GitHub OAuth が動作しないためブロック
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      setError("ローカル環境では GitHub ログインを使用できません。\n本番 URL（Vercel）からログインしてください。\n管理者ログインはメール/パスワードを使用してください。");
+      return;
+    }
     setIsLoading(true);
     setError("");
     const { error } = await supabase.auth.signInWithOAuth({
