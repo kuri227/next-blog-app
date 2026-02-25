@@ -32,16 +32,28 @@ const Page: React.FC = () => {
     }
   };
 
-  const handleAdminLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAdminLogin = async (e?: React.FormEvent | React.MouseEvent) => {
+    if (e) e.preventDefault();
     setIsAdminLoading(true);
     setError("");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "demo@techsns.dev";
+    const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "password"; // デフォルトのパスワードなど
+
+    // 既存の（無効になっているかもしれない）セッションを一度破棄して強制クリーンアップ
+    await supabase.auth.signOut();
+
+    const { error } = await supabase.auth.signInWithPassword({ 
+      email: adminEmail, 
+      password: adminPassword 
+    });
+
     if (error) {
-      setError(error.message);
+      setError(`管理者ログイン失敗: ${error.message} (Email: ${adminEmail})`);
       setIsAdminLoading(false);
     } else {
-      router.replace("/");
+      // 管理者画面に遷移するよう要求があったので変更
+      router.replace("/admin");
     }
   };
 
@@ -79,48 +91,22 @@ const Page: React.FC = () => {
           GitHub でログインする
         </button>
 
-        {/* 管理者ログイン（折りたたみ） */}
+        {/* 管理者ログイン（単一ボタン） */}
         <div className="mt-6">
           <button
-            onClick={() => setShowAdminForm(!showAdminForm)}
-            className="flex w-full items-center justify-center gap-1.5 text-xs text-slate-400 hover:text-slate-600"
+            onClick={handleAdminLogin}
+            disabled={isAdminLoading}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-slate-900 bg-white px-6 py-3.5 text-sm font-bold text-slate-900 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
           >
-            管理者としてログイン
-            <FontAwesomeIcon
-              icon={faChevronDown}
-              className={`text-[10px] transition-transform ${showAdminForm ? "rotate-180" : ""}`}
-            />
+            {isAdminLoading ? (
+              <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+            ) : (
+              "管理者テストログイン"
+            )}
           </button>
-
-          {showAdminForm && (
-            <form onSubmit={handleAdminLogin} className="mt-4 space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <input
-                type="email"
-                placeholder="メールアドレス"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-500 focus:outline-none"
-              />
-              <input
-                type="password"
-                placeholder="パスワード"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:border-indigo-500 focus:outline-none"
-              />
-              <button
-                type="submit"
-                disabled={isAdminLoading}
-                className="w-full rounded-xl bg-slate-800 py-2.5 text-sm font-bold text-white hover:bg-slate-700 disabled:opacity-50"
-              >
-                {isAdminLoading
-                  ? <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
-                  : "管理者としてログイン"}
-              </button>
-            </form>
-          )}
+          <p className="mt-2 text-center text-[10px] text-slate-400">
+            NEXT_PUBLIC_ADMIN_EMAIL / NEXT_PUBLIC_ADMIN_PASSWORD の環境変数を使用します
+          </p>
         </div>
 
         <p className="mt-6 text-center text-xs text-slate-400">

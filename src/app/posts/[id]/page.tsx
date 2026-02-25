@@ -187,10 +187,24 @@ const Page: React.FC = () => {
     startTransition(async () => {
       updateLikes(liked ? -1 : 1);
       setLiked((v) => !v);
-      await fetch(`/api/posts/${post.id}/like`, {
-        method: liked ? "DELETE" : "POST",
-        headers: { Authorization: token },
-      });
+      try {
+        const res = await fetch(`/api/posts/${post.id}/like`, {
+          method: liked ? "DELETE" : "POST",
+          headers: { Authorization: token },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          // サーバーからの最新のカウントでベースステートを更新
+          setPost((prev) =>
+            prev ? { ...prev, _count: { ...prev._count, likes: data.count } } : null,
+          );
+        } else {
+          // エラー時はロールバック
+          setLiked((v) => !v);
+        }
+      } catch (e) {
+        setLiked((v) => !v); // 通信エラー時もロールバック
+      }
     });
   }, [token, post, liked, updateLikes, startTransition]);
 
@@ -352,9 +366,18 @@ const Page: React.FC = () => {
                 rehypePlugins={[rehypeHighlight, rehypeSlug]}
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  code: ({ className, children }) => (
-                    <CodeBlock className={className}>{children}</CodeBlock>
-                  ),
+                  code: ({ className, children, ...props }: any) => {
+                    const isMatch = /language-(\w+)/.exec(className || "") || className?.includes("hljs");
+                    const isBlock = isMatch || String(children).includes("\n");
+                    if (isBlock) {
+                      return <CodeBlock className={className}>{children}</CodeBlock>;
+                    }
+                    return (
+                      <code className={twMerge("rounded bg-slate-100 px-1.5 py-0.5 text-sm font-medium text-slate-800 dark:bg-slate-800 dark:text-slate-200", className)} {...props}>
+                        {children}
+                      </code>
+                    );
+                  },
                   blockquote: ({ children }) => (
                     <CustomBlockquote>{children}</CustomBlockquote>
                   ),

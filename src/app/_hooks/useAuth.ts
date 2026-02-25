@@ -25,11 +25,12 @@ export const useAuth = () => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const syncUser = async (accessToken: string) => {
+  const syncUser = async (accessToken: string, signal?: AbortSignal) => {
     try {
       const res = await fetch("/api/auth/sync", {
         method: "POST",
         headers: { Authorization: accessToken },
+        signal,
       });
       if (res.ok) {
         const data: DbUser & { isNewUser?: boolean } = await res.json();
@@ -40,17 +41,27 @@ export const useAuth = () => {
         }
       }
     } catch (e) {
-      console.error("User sync failed:", e);
+      if (e instanceof Error && e.name === "AbortError") {
+        // コンポーネントのアンマウント等による中断は無視する
+        return;
+      }
+      if (e instanceof TypeError && e.message === "Failed to fetch") {
+        console.warn("User sync fetch failed (network error or unmounted)", e);
+      } else {
+        console.error("User sync failed:", e);
+      }
     }
   };
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setSession(session);
         setToken(session?.access_token || null);
         if (session?.access_token) {
-          await syncUser(session.access_token);
+          await syncUser(session.access_token, controller.signal);
         } else {
           setDbUser(null);
         }
@@ -64,7 +75,7 @@ export const useAuth = () => {
         setSession(session);
         setToken(session?.access_token || null);
         if (session?.access_token) {
-          await syncUser(session.access_token);
+          await syncUser(session.access_token, controller.signal);
         }
       } catch (error) {
         console.error(`セッション取得失敗: ${error instanceof Error ? error.message : error}`);
@@ -74,7 +85,10 @@ export const useAuth = () => {
     };
 
     getInitialSession();
-    return () => authListener?.subscription?.unsubscribe();
+    return () => {
+      authListener?.subscription?.unsubscribe();
+      controller.abort();
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { isLoading, session, token, dbUser, setDbUser };

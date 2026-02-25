@@ -34,6 +34,9 @@ const Header: React.FC = () => {
       { href: "/bookmarks", icon: faBookmark, label: "ブックマーク" },
       { href: "/admin/posts/new", icon: faPenToSquare, label: "新規投稿" },
     ] : []),
+    ...(dbUser?.role === "ADMIN" ? [
+      { href: "/admin", icon: faGear, label: "管理画面" },
+    ] : []),
   ];
 
   return (
@@ -176,6 +179,16 @@ const Header: React.FC = () => {
                   className="group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-[var(--text-muted)] transition-all hover:bg-slate-900 hover:text-white dark:hover:bg-slate-700">
                   <FontAwesomeIcon icon={faTags} className="w-5 text-slate-400 group-hover:text-indigo-400" />
                   カテゴリ管理
+                </Link>
+                <Link href="/admin/posts/new" onClick={toggleMenu}
+                  className="group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-[var(--text-muted)] transition-all hover:bg-slate-900 hover:text-white dark:hover:bg-slate-700">
+                  <FontAwesomeIcon icon={faPenToSquare} className="w-5 text-slate-400 group-hover:text-indigo-400" />
+                  新規記事作成
+                </Link>
+                <Link href="/admin/categories/new" onClick={toggleMenu}
+                  className="group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-[var(--text-muted)] transition-all hover:bg-slate-900 hover:text-white dark:hover:bg-slate-700">
+                  <FontAwesomeIcon icon={faTags} className="w-5 text-slate-400 group-hover:text-indigo-400" />
+                  新規カテゴリ作成
                 </Link>
                 <div className="px-4 pt-3">
                   <div className="rounded-xl border border-[var(--border)] bg-slate-50 p-3 text-[10px] text-[var(--text-muted)] dark:bg-slate-800">

@@ -33,23 +33,40 @@ const Page: React.FC = () => {
     const load = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch("/api/posts", { cache: "no-store" });
+        let url = "/api/posts";
+        const headers: HeadersInit = {};
+
+        if (tab === "following") {
+          if (!token) {
+            // トークンがない（未ログイン）場合は取得しない
+            setPosts([]);
+            setIsLoading(false);
+            return;
+          }
+          url = "/api/feed/following";
+          headers["Authorization"] = token;
+        }
+
+        const res = await fetch(url, { cache: "no-store", headers });
         if (res.ok) {
           const data: FeedPost[] = await res.json();
 
           if (tab === "trending") {
             data.sort((a, b) => b._count.likes - a._count.likes);
           }
-          // "following" タブは後で実装するため latest と同じ
 
           setPosts(data);
+        } else {
+          setPosts([]);
         }
+      } catch {
+        setPosts([]);
       } finally {
         setIsLoading(false);
       }
     };
     load();
-  }, [tab]);
+  }, [tab, token]);
 
   const tabConfig: { key: FeedTab; label: string }[] = [
     { key: "latest", label: "🆕 新着" },
@@ -111,10 +128,9 @@ const Page: React.FC = () => {
               ? supabase.storage.from(bucketName).getPublicUrl(post.coverImageKey).data.publicUrl
               : null;
             return (
-              <Link
+              <div
                 key={post.id}
-                href={`/posts/${post.id}`}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 dark:border-slate-700 dark:bg-slate-800"
+                className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 dark:border-slate-700 dark:bg-slate-800"
               >
                 {/* カバー画像 */}
                 <div className="relative aspect-video overflow-hidden bg-slate-100 dark:bg-slate-700">
@@ -126,7 +142,7 @@ const Page: React.FC = () => {
                     </div>
                   )}
                   <span className={twMerge(
-                    "absolute top-3 left-3 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase",
+                    "absolute z-10 top-3 left-3 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase",
                     post.postType === "PROJECT" ? "bg-emerald-100 text-emerald-700" : "bg-indigo-100 text-indigo-700",
                   )}>
                     {post.postType === "PROJECT" ? "作品" : "知見"}
@@ -134,19 +150,20 @@ const Page: React.FC = () => {
                 </div>
                 <div className="flex flex-1 flex-col gap-3 p-5">
                   <h2 className="line-clamp-2 font-black text-slate-800 group-hover:text-indigo-600 dark:text-slate-100">
-                    {post.title}
+                    <Link href={`/posts/${post.id}`} className="before:absolute before:inset-0">
+                      {post.title}
+                    </Link>
                   </h2>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="relative z-10 flex flex-wrap gap-1">
                     {post.categories.map((c) => (
                       <span key={c.category.id} className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500 dark:bg-slate-700 dark:text-slate-300">
                         {c.category.name}
                       </span>
                     ))}
                   </div>
-                  <div className="mt-auto flex items-center justify-between">
+                  <div className="relative z-10 mt-auto flex items-center justify-between">
                     <Link
                       href={`/profile/${post.author.id}`}
-                      onClick={(e) => e.stopPropagation()}
                       className="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-800"
                     >
                       {post.author.avatarUrl ? (
@@ -168,7 +185,7 @@ const Page: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>

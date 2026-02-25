@@ -76,7 +76,7 @@ const Page: React.FC = () => {
         </Link>
         <Link
           href="/admin/categories"
-          className="flex items-center gap-2 border-b-2 border-indigo-500 px-4 py-2 text-sm font-bold text-indigo-600"
+          className="flex items-center gap-2 border-b-2 border-indigo-500 px-4 py-2 text-sm font-bold text-indigo-600 dark:text-indigo-400"
         >
           <FontAwesomeIcon icon={faTags} />
           カテゴリ管理
@@ -84,7 +84,7 @@ const Page: React.FC = () => {
       </div>
 
       <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-        <h1 className="text-2xl font-black tracking-tight text-slate-800">
+        <h1 className="text-2xl font-black tracking-tight text-slate-800 dark:text-slate-100">
           カテゴリ管理
         </h1>
         <div className="flex w-full gap-3 md:w-auto">
@@ -98,7 +98,7 @@ const Page: React.FC = () => {
               placeholder="カテゴリ名で検索..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 py-2 pr-4 pl-9 text-sm transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 focus:outline-none"
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 py-2 pr-4 pl-9 text-sm transition-all focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 focus:outline-none"
             />
           </div>
           <Link
@@ -116,26 +116,26 @@ const Page: React.FC = () => {
           <FontAwesomeIcon icon={faSpinner} className="animate-spin text-3xl" />
         </div>
       ) : filteredCategories.length > 0 ? (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-xs font-bold text-slate-500 uppercase">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
+          <table className="w-full text-left text-sm text-slate-700 dark:text-slate-300">
+            <thead className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">
               <tr>
                 <th className="px-6 py-4">カテゴリ名</th>
                 <th className="px-6 py-4 text-center">記事数</th>
                 <th className="px-6 py-4 text-center">操作</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
               {filteredCategories.map((cat) => (
                 <tr
                   key={cat.id}
-                  className="transition-colors hover:bg-slate-50/50"
+                  className="transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-700/50"
                 >
-                  <td className="px-6 py-4 font-bold text-slate-700">
+                  <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-200">
                     {cat.name}
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-[10px] font-black text-indigo-600 ring-1 ring-indigo-600/20 ring-inset">
+                    <span className="inline-flex items-center rounded-full bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-0.5 text-[10px] font-black text-indigo-600 dark:text-indigo-400 ring-1 ring-indigo-600/20 dark:ring-indigo-400/20 ring-inset">
                       {cat._count.posts} 記事
                     </span>
                   </td>
@@ -162,12 +162,12 @@ const Page: React.FC = () => {
           </table>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-slate-200 bg-white py-24 text-slate-400">
+        <div className="flex flex-col items-center justify-center rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-24 text-slate-400 dark:text-slate-500">
           <FontAwesomeIcon
             icon={faFolderOpen}
             className="mb-4 text-6xl opacity-20"
           />
-          <p className="mb-1 text-xl font-black text-slate-800">
+          <p className="mb-1 text-xl font-black text-slate-800 dark:text-slate-200">
             カテゴリが見つかりません
           </p>
         </div>

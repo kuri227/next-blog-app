@@ -137,6 +137,7 @@ const Page: React.FC = () => {
       });
       if (!res.ok) throw new Error((await res.json()).error);
       const post = await res.json();
+      localStorage.removeItem(DRAFT_KEY);
       router.push(`/posts/${post.id}`);
     } catch (error) {
       window.alert(`投稿失敗: ${error instanceof Error ? error.message : error}`);
@@ -149,13 +150,13 @@ const Page: React.FC = () => {
 
   return (
     <main className="mx-auto max-w-3xl pb-20">
-      <h1 className="mb-8 text-3xl font-black tracking-tight text-slate-800">
+      <h1 className="mb-8 text-3xl font-black tracking-tight text-slate-800 dark:text-slate-100">
         新規投稿
       </h1>
 
       {(isSubmitting || isUploading) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="flex items-center gap-2 rounded-lg bg-white px-8 py-4 shadow-lg text-gray-500">
+          <div className="flex items-center gap-2 rounded-lg bg-white dark:bg-slate-800 px-8 py-4 shadow-lg text-gray-500 dark:text-gray-300">
             <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
             {isUploading ? "アップロード中..." : "投稿中..."}
           </div>
@@ -174,7 +175,7 @@ const Page: React.FC = () => {
                 "flex items-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-black transition-all",
                 postType === t
                   ? "border-indigo-600 bg-indigo-600 text-white"
-                  : "border-slate-200 text-slate-500 hover:border-indigo-300",
+                  : "border-slate-200 dark:border-slate-700 text-slate-500 hover:border-indigo-300 dark:hover:border-indigo-500",
               )}
             >
               <FontAwesomeIcon icon={t === "KNOWLEDGE" ? faCode : faGlobe} />
@@ -190,25 +191,25 @@ const Page: React.FC = () => {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
-          className="w-full rounded-2xl border border-slate-200 px-5 py-4 text-xl font-bold focus:border-indigo-500 focus:outline-none"
+          className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 px-5 py-4 text-xl font-bold focus:border-indigo-500 focus:outline-none"
         />
 
         {/* 本文（Markdown） */}
         <div className="space-y-2">
-          <label className="text-sm font-bold text-slate-700">本文（Markdown 対応）</label>
+          <label className="text-sm font-bold text-slate-700 dark:text-slate-200">本文（Markdown 対応）</label>
           <textarea
             placeholder="## 見出し&#10;&#10;本文を Markdown で書いてください..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
             required
-            className="h-64 w-full resize-none rounded-2xl border border-slate-200 px-5 py-4 font-mono text-sm leading-relaxed focus:border-indigo-500 focus:outline-none"
+            className="h-64 w-full resize-none rounded-2xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 px-5 py-4 font-mono text-sm leading-relaxed focus:border-indigo-500 focus:outline-none"
           />
         </div>
 
         {/* PROJECT の場合のみ URL 入力 */}
         {postType === "PROJECT" && (
-          <div className="space-y-3 rounded-2xl border border-slate-200 p-5">
-            <p className="text-sm font-bold text-slate-700">プロジェクト URL</p>
+          <div className="space-y-3 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-200">プロジェクト URL</p>
             <div className="flex items-center gap-3">
               <FontAwesomeIcon icon={faLink} className="text-slate-400" />
               <input
@@ -216,7 +217,7 @@ const Page: React.FC = () => {
                 placeholder="GitHub リポジトリ URL"
                 value={repoUrl}
                 onChange={(e) => setRepoUrl(e.target.value)}
-                className="flex-1 rounded-xl border border-slate-200 px-4 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 px-4 py-2 text-sm focus:border-indigo-500 focus:outline-none"
               />
             </div>
             <div className="flex items-center gap-3">
@@ -230,19 +231,19 @@ const Page: React.FC = () => {
                   setOgpData(null);
                 }}
                 onBlur={(e) => fetchOgp(e.target.value)}
-                className="flex-1 rounded-xl border border-slate-200 px-4 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 px-4 py-2 text-sm focus:border-indigo-500 focus:outline-none"
               />
               {isFetchingOgp && <FontAwesomeIcon icon={faSpinner} className="animate-spin text-slate-400" />}
             </div>
             {/* OGP プレビュー */}
             {ogpData && (
-              <div className="mt-2 flex gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <div className="mt-2 flex gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3">
                 {ogpData.image && (
                   <img src={ogpData.image} alt="" className="h-16 w-16 rounded-lg object-cover" />
                 )}
                 <div>
-                  <p className="text-sm font-bold text-slate-800">{ogpData.title}</p>
-                  <p className="mt-0.5 text-xs text-slate-500 line-clamp-2">{ogpData.description}</p>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{ogpData.title}</p>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{ogpData.description}</p>
                 </div>
               </div>
             )}
@@ -251,7 +252,7 @@ const Page: React.FC = () => {
 
         {/* カバー画像 */}
         <div className="space-y-2">
-          <label className="text-sm font-bold text-slate-700">カバー画像（任意）</label>
+          <label className="text-sm font-bold text-slate-700 dark:text-slate-200">カバー画像（任意）</label>
           <input
             type="file"
             accept="image/*"
@@ -266,7 +267,7 @@ const Page: React.FC = () => {
 
         {/* カテゴリ */}
         <div className="space-y-2">
-          <label className="text-sm font-bold text-slate-700">カテゴリ</label>
+          <label className="text-sm font-bold text-slate-700 dark:text-slate-200">カテゴリ</label>
           <div className="flex flex-wrap gap-2">
             {checkableCategories.map((c) => (
               <button
@@ -283,7 +284,7 @@ const Page: React.FC = () => {
                   "rounded-xl border px-4 py-1.5 text-xs font-black transition-all",
                   c.isSelect
                     ? "border-indigo-600 bg-indigo-600 text-white"
-                    : "border-slate-200 text-slate-500 hover:border-indigo-300",
+                    : "border-slate-200 dark:border-slate-700 text-slate-500 hover:border-indigo-300 dark:hover:border-indigo-500",
                 )}
               >
                 {c.name}
@@ -300,7 +301,7 @@ const Page: React.FC = () => {
             onChange={(e) => setPublished(e.target.checked)}
             className="h-4 w-4 rounded"
           />
-          <span className="text-sm font-bold text-slate-700">すぐに公開する（チェックを外すと下書き保存）</span>
+          <span className="text-sm font-bold text-slate-700 dark:text-slate-200">すぐに公開する（チェックを外すと下書き保存）</span>
         </label>
 
         <button

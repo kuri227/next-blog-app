@@ -6,7 +6,7 @@ import { faArrowRight } from "@fortawesome/free-solid-svg-icons";
 const Page: React.FC = () => {
   return (
     <main>
-      <div className="mb-2 text-2xl font-bold">管理者用機能の一覧</div>
+      <div className="mb-2 text-2xl font-bold dark:text-slate-100">管理者用機能の一覧</div>
       <ul>
         <li>
           <FontAwesomeIcon icon={faArrowRight} className="mr-2" />

@@ -69,14 +69,14 @@ const Page: React.FC = () => {
       <div className="flex border-b border-slate-200">
         <Link
           href="/admin/posts"
-          className="px-4 py-2 text-sm font-medium text-slate-500 transition hover:text-indigo-600"
+          className="px-4 py-2 text-sm font-medium text-slate-500 transition hover:text-indigo-600 dark:hover:text-indigo-400"
         >
           <FontAwesomeIcon icon={faTableList} className="mr-2" />
           記事管理
         </Link>
         <Link
           href="/admin/categories"
-          className="border-b-2 border-indigo-500 px-4 py-2 text-sm font-bold text-indigo-600"
+          className="border-b-2 border-indigo-500 px-4 py-2 text-sm font-bold text-indigo-600 dark:text-indigo-400"
         >
           <FontAwesomeIcon icon={faTags} className="mr-2" />
           カテゴリ管理
@@ -92,8 +92,8 @@ const Page: React.FC = () => {
           戻る
         </button>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-          <h1 className="mb-8 text-2xl font-black tracking-tight text-slate-800">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 shadow-sm">
+          <h1 className="mb-8 text-2xl font-black tracking-tight text-slate-800 dark:text-slate-100">
             カテゴリの編集
           </h1>
 
@@ -109,7 +109,7 @@ const Page: React.FC = () => {
               <div className="space-y-2">
                 <label
                   htmlFor="name"
-                  className="ml-1 text-sm font-bold text-slate-700"
+                  className="ml-1 text-sm font-bold text-slate-700 dark:text-slate-200"
                 >
                   カテゴリ名
                 </label>
@@ -118,7 +118,7 @@ const Page: React.FC = () => {
                   id="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-3 transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 focus:outline-none"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 px-4 py-3 transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 focus:outline-none"
                   required
                 />
               </div>

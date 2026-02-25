@@ -28,13 +28,27 @@ const Page: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!dbUser) { setIsLoading(false); return; }
-    // TODO: 専用 /api/bookmarks API を作成して最適化する
-    // 現在は全投稿を取得してブックマーク状態をクライアントで管理する暫定実装
-    fetch("/api/posts", { cache: "no-store" })
+    if (!dbUser || !token) { setIsLoading(false); return; }
+    // 新設した API からブックマークした投稿のみを取得する
+    fetch("/api/posts/bookmarks", { 
+      cache: "no-store",
+      headers: { Authorization: token },
+    })
       .then((r) => r.json())
-      .then((data) => { setPosts(data); setIsLoading(false); });
-  }, [dbUser]);
+      .then((data) => { 
+        // もしエラーが返ってきたら空配列にするなどのフォールバック
+        if (Array.isArray(data)) {
+          setPosts(data); 
+        } else {
+          setPosts([]);
+        }
+        setIsLoading(false); 
+      })
+      .catch(() => {
+        setPosts([]);
+        setIsLoading(false);
+      });
+  }, [dbUser, token]);
 
   if (!dbUser && !isLoading) {
     return (
