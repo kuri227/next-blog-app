@@ -37,8 +37,8 @@ const Page: React.FC = () => {
     setIsAdminLoading(true);
     setError("");
 
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "demo@techsns.dev";
-    const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "password"; // デフォルトのパスワードなど
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@example.com";
+    const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "admin123"; // デフォルトのパスワードなど
 
     // 既存の（無効になっているかもしれない）セッションを一度破棄して強制クリーンアップ
     await supabase.auth.signOut();
