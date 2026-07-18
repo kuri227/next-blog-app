@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
-import { supabase } from "@/utils/supabase";
+import { getAdminDbUser } from "@/lib/auth";
 
 type RouteParams = {
   params: Promise<{ id: string }>;
@@ -17,21 +17,10 @@ type RequestBody = {
   published: boolean;
 };
 
-const getDbUser = async (authHeader: string) => {
-  const { data, error } = await supabase.auth.getUser(authHeader);
-  if (error || !data.user) return null;
-  return prisma.user.findUnique({ where: { supabaseId: data.user.id } });
-};
-
 export const PUT = async (req: NextRequest, routeParams: RouteParams) => {
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader) {
-    return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
-  }
-
-  const dbUser = await getDbUser(authHeader);
+  const dbUser = await getAdminDbUser(req.headers.get("Authorization"));
   if (!dbUser) {
-    return NextResponse.json({ error: "認証に失敗しました" }, { status: 401 });
+    return NextResponse.json({ error: "管理者権限が必要です" }, { status: 403 });
   }
 
   try {
@@ -42,10 +31,6 @@ export const PUT = async (req: NextRequest, routeParams: RouteParams) => {
     if (!existing) {
       return NextResponse.json({ error: "投稿が見つかりません" }, { status: 404 });
     }
-    if (existing.authorId !== dbUser.id && dbUser.role !== "ADMIN") {
-      return NextResponse.json({ error: "権限がありません" }, { status: 403 });
-    }
-
     const requestBody: RequestBody = await req.json();
     const {
       title,
@@ -97,14 +82,9 @@ export const PUT = async (req: NextRequest, routeParams: RouteParams) => {
 };
 
 export const DELETE = async (req: NextRequest, routeParams: RouteParams) => {
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader) {
-    return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
-  }
-
-  const dbUser = await getDbUser(authHeader);
+  const dbUser = await getAdminDbUser(req.headers.get("Authorization"));
   if (!dbUser) {
-    return NextResponse.json({ error: "認証に失敗しました" }, { status: 401 });
+    return NextResponse.json({ error: "管理者権限が必要です" }, { status: 403 });
   }
 
   try {
@@ -114,10 +94,6 @@ export const DELETE = async (req: NextRequest, routeParams: RouteParams) => {
     if (!existing) {
       return NextResponse.json({ error: "投稿が見つかりません" }, { status: 404 });
     }
-    if (existing.authorId !== dbUser.id && dbUser.role !== "ADMIN") {
-      return NextResponse.json({ error: "権限がありません" }, { status: 403 });
-    }
-
     const post = await prisma.post.delete({ where: { id } });
     return NextResponse.json({ msg: `「${post.title}」を削除しました。` });
   } catch (error) {

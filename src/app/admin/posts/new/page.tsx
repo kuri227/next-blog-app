@@ -53,7 +53,7 @@ const Page: React.FC = () => {
         }
       }
     } catch {}
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── 自動下書き保存（debounce 1s） ────────────────────────────
   const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

@@ -158,7 +158,7 @@ export type PostCategoryGroupByOutputType = {
   _max: PostCategoryMaxAggregateOutputType | null
 }
 
-type GetPostCategoryGroupByPayload<T extends PostCategoryGroupByArgs> = Prisma.PrismaPromise<
+export type GetPostCategoryGroupByPayload<T extends PostCategoryGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<PostCategoryGroupByOutputType, T['by']> &
       {
@@ -1242,6 +1242,11 @@ export type PostCategoryFindManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * Skip the first `n` PostCategories.
    */
   skip?: number
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+   * 
+   * Filter by unique combinations of PostCategories.
+   */
   distinct?: Prisma.PostCategoryScalarFieldEnum | Prisma.PostCategoryScalarFieldEnum[]
 }
 

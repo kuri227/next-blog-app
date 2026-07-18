@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
-import { supabase } from "@/utils/supabase";
+import { getAdminDbUser } from "@/lib/auth";
 
 type RequestBody = {
   title: string;
@@ -13,22 +13,10 @@ type RequestBody = {
   published: boolean;
 };
 
-// 認証ユーザーの DB User を取得するヘルパー
-const getDbUser = async (authHeader: string) => {
-  const { data, error } = await supabase.auth.getUser(authHeader);
-  if (error || !data.user) return null;
-  return prisma.user.findUnique({ where: { supabaseId: data.user.id } });
-};
-
 export const POST = async (req: NextRequest) => {
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader) {
-    return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
-  }
-
-  const dbUser = await getDbUser(authHeader);
+  const dbUser = await getAdminDbUser(req.headers.get("Authorization"));
   if (!dbUser) {
-    return NextResponse.json({ error: "認証に失敗しました" }, { status: 401 });
+    return NextResponse.json({ error: "管理者権限が必要です" }, { status: 403 });
   }
 
   try {

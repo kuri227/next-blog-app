@@ -1,0 +1,24 @@
+import { prisma } from "@/lib/prisma";
+import { supabase } from "@/utils/supabase";
+
+const extractAccessToken = (authorization: string | null) => {
+  if (!authorization) return null;
+  return authorization.replace(/^Bearer\s+/i, "").trim() || null;
+};
+
+export const getAuthenticatedDbUser = async (authorization: string | null) => {
+  const accessToken = extractAccessToken(authorization);
+  if (!accessToken) return null;
+
+  const { data, error } = await supabase.auth.getUser(accessToken);
+  if (error || !data.user) return null;
+
+  return prisma.user.findUnique({
+    where: { supabaseId: data.user.id },
+  });
+};
+
+export const getAdminDbUser = async (authorization: string | null) => {
+  const user = await getAuthenticatedDbUser(authorization);
+  return user?.role === "ADMIN" ? user : null;
+};

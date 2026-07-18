@@ -2,24 +2,19 @@
 import { useState } from "react";
 import { supabase } from "@/utils/supabase";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner, faChevronDown } from "@fortawesome/free-solid-svg-icons";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useRouter } from "next/navigation";
 
 const Page: React.FC = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showAdminForm, setShowAdminForm] = useState(false);
+  const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isAdminLoading, setIsAdminLoading] = useState(false);
 
   const handleGitHubLogin = async () => {
-    // localhost では GitHub OAuth が動作しないためブロック
-    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-      setError("ローカル環境では GitHub ログインを使用できません。\n本番 URL（Vercel）からログインしてください。\n管理者ログインはメール/パスワードを使用してください。");
-      return;
-    }
     setIsLoading(true);
     setError("");
     const { error } = await supabase.auth.signInWithOAuth({
@@ -32,29 +27,45 @@ const Page: React.FC = () => {
     }
   };
 
-  const handleAdminLogin = async (e?: React.FormEvent | React.MouseEvent) => {
-    if (e) e.preventDefault();
+  const handleEmailLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsAdminLoading(true);
     setError("");
+    setMessage("");
 
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@example.com";
-    const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "admin123"; // デフォルトのパスワードなど
-
-    // 既存の（無効になっているかもしれない）セッションを一度破棄して強制クリーンアップ
     await supabase.auth.signOut();
 
-    const { error } = await supabase.auth.signInWithPassword({ 
-      email: adminEmail, 
-      password: adminPassword 
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     });
 
     if (error) {
-      setError(`管理者ログイン失敗: ${error.message} (Email: ${adminEmail})`);
+      setError(`ログイン失敗: ${error.message}`);
       setIsAdminLoading(false);
     } else {
-      // 管理者画面に遷移するよう要求があったので変更
       router.replace("/admin");
     }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!email) {
+      setError("パスワードを再設定するメールアドレスを入力してください");
+      return;
+    }
+
+    setError("");
+    setMessage("");
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      setError(`再設定メールの送信に失敗しました: ${error.message}`);
+      return;
+    }
+
+    setMessage("パスワード再設定メールを送信しました");
   };
 
   return (
@@ -74,6 +85,11 @@ const Page: React.FC = () => {
             {error}
           </div>
         )}
+        {message && (
+          <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            {message}
+          </div>
+        )}
 
         {/* GitHub ログイン */}
         <button
@@ -91,23 +107,44 @@ const Page: React.FC = () => {
           GitHub でログインする
         </button>
 
-        {/* 管理者ログイン（単一ボタン） */}
-        <div className="mt-6">
+        <form onSubmit={handleEmailLogin} className="mt-6 space-y-3">
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            autoComplete="email"
+            placeholder="メールアドレス"
+            required
+            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none"
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete="current-password"
+            placeholder="パスワード"
+            required
+            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none"
+          />
           <button
-            onClick={handleAdminLogin}
+            type="submit"
             disabled={isAdminLoading}
             className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-slate-900 bg-white px-6 py-3.5 text-sm font-bold text-slate-900 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
           >
             {isAdminLoading ? (
               <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
             ) : (
-              "管理者テストログイン"
+              "メールアドレスでログイン"
             )}
           </button>
-          <p className="mt-2 text-center text-[10px] text-slate-400">
-            NEXT_PUBLIC_ADMIN_EMAIL / NEXT_PUBLIC_ADMIN_PASSWORD の環境変数を使用します
-          </p>
-        </div>
+          <button
+            type="button"
+            onClick={handlePasswordReset}
+            className="w-full text-center text-xs font-medium text-slate-500 underline hover:text-slate-800"
+          >
+            パスワードを再設定
+          </button>
+        </form>
 
         <p className="mt-6 text-center text-xs text-slate-400">
           ログインすることで

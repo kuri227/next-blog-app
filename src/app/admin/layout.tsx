@@ -8,8 +8,8 @@ interface Props {
   children: React.ReactNode;
 }
 const AdminLayout = ({ children }: Props) => {
-  const { isAuthenticated } = useRouteGuard();
-  if (!isAuthenticated) {
+  const { isAuthorized } = useRouteGuard();
+  if (!isAuthorized) {
     return null;
   }
   return <>{children}</>;

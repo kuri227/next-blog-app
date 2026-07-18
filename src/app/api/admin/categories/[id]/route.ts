@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
 import { Category } from "@/generated/prisma/client";
-import { supabase } from "@/utils/supabase";
+import { getAdminDbUser } from "@/lib/auth";
 
 type RouteParams = {
   params: Promise<{
@@ -14,15 +14,9 @@ type RequestBody = {
 };
 
 export const DELETE = async (req: NextRequest, routeParams: RouteParams) => {
-  // 認証チェック
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader) {
-    return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
-  }
-
-  const { data, error } = await supabase.auth.getUser(authHeader);
-  if (error || !data.user) {
-    return NextResponse.json({ error: "認証に失敗しました" }, { status: 401 });
+  const admin = await getAdminDbUser(req.headers.get("Authorization"));
+  if (!admin) {
+    return NextResponse.json({ error: "管理者権限が必要です" }, { status: 403 });
   }
 
   try {
@@ -39,15 +33,9 @@ export const DELETE = async (req: NextRequest, routeParams: RouteParams) => {
 };
 
 export const PUT = async (req: NextRequest, routeParams: RouteParams) => {
-  // 認証チェック
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader) {
-    return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
-  }
-
-  const { data, error } = await supabase.auth.getUser(authHeader);
-  if (error || !data.user) {
-    return NextResponse.json({ error: "認証に失敗しました" }, { status: 401 });
+  const admin = await getAdminDbUser(req.headers.get("Authorization"));
+  if (!admin) {
+    return NextResponse.json({ error: "管理者権限が必要です" }, { status: 403 });
   }
 
   try {
