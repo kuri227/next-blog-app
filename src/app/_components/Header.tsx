@@ -172,34 +172,6 @@ const Header: React.FC = () => {
             )}
           </nav>
 
-          {session && adminExperience === "demo" && (
-            <div className="mt-6 border-t border-[var(--border)] pt-6">
-              <h3 className="mb-3 px-4 text-[10px] font-black tracking-widest text-amber-600 uppercase">
-                Admin Demo
-              </h3>
-              <div className="space-y-1">
-                {[
-                  ["/admin-demo#dashboard", faGear, "ダッシュボード"],
-                  ["/admin-demo#posts", faTableList, "投稿管理デモ"],
-                  ["/admin-demo#categories", faTags, "カテゴリー管理デモ"],
-                  ["/admin-demo#users", faUsers, "ユーザー管理デモ"],
-                  ["/admin-demo#comments", faComments, "コメント管理デモ"],
-                ].map(([href, icon, label]) => (
-                  <Link key={href as string} href={href as string} onClick={toggleMenu}
-                    className="group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-[var(--text-muted)] transition-all hover:bg-amber-50 hover:text-amber-800 dark:hover:bg-amber-950">
-                    <FontAwesomeIcon icon={icon as typeof faGear} className="w-5 text-amber-500" />
-                    {label as string}
-                  </Link>
-                ))}
-                <div className="px-4 pt-3">
-                  <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-[10px] font-bold text-amber-800 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200">
-                    Demo Administrator Mode Active
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Admin Console（ADMIN のみ） */}
           {dbUser?.role === "ADMIN" && (
             <div className="mt-6 border-t border-[var(--border)] pt-6">
