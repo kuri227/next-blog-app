@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/utils/supabase";
+import { writeAdminExperience } from "@/lib/admin-experience";
 
 type SyncedUser = {
   role: "ADMIN" | "DEMO_ADMIN" | "USER";
@@ -48,10 +49,12 @@ const Page = () => {
 
       const user: SyncedUser = await response.json();
       if (mode === "admin") {
+        writeAdminExperience(user.role === "ADMIN" ? "admin" : "demo");
         router.replace(user.role === "ADMIN" ? "/admin" : "/admin-demo");
         return;
       }
 
+      writeAdminExperience(null);
       router.replace(user.isOnboardingComplete ? "/feed" : "/onboarding");
     };
 

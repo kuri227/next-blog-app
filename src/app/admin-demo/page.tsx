@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/_hooks/useAuth";
+import { useAdminExperience } from "@/lib/admin-experience";
 
 type DemoPost = {
   id: string;
@@ -22,6 +23,7 @@ type DemoState = {
 type Tab = "dashboard" | "posts" | "categories" | "users" | "comments";
 
 const STORAGE_KEY = "techfeed:interactive-admin-demo:v1";
+const DEMO_TABS: Tab[] = ["dashboard", "posts", "categories", "users", "comments"];
 
 const initialState: DemoState = {
   posts: [
@@ -45,13 +47,31 @@ const initialState: DemoState = {
 const Page = () => {
   const router = useRouter();
   const { session, isLoading: authLoading } = useAuth();
+  const { setMode: setAdminExperience } = useAdminExperience();
   const [tab, setTab] = useState<Tab>("dashboard");
   const [state, setState] = useState<DemoState>(initialState);
   const [ready, setReady] = useState(false);
+  const [newPostTitle, setNewPostTitle] = useState("");
+  const [newCategoryName, setNewCategoryName] = useState("");
 
   useEffect(() => {
-    if (!authLoading && !session) router.replace("/login");
-  }, [authLoading, router, session]);
+    if (authLoading) return;
+    if (!session) {
+      router.replace("/login");
+      return;
+    }
+    setAdminExperience("demo");
+  }, [authLoading, router, session, setAdminExperience]);
+
+  useEffect(() => {
+    const syncTabFromHash = () => {
+      const hash = window.location.hash.slice(1) as Tab;
+      if (DEMO_TABS.includes(hash)) setTab(hash);
+    };
+    syncTabFromHash();
+    window.addEventListener("hashchange", syncTabFromHash);
+    return () => window.removeEventListener("hashchange", syncTabFromHash);
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -80,57 +100,64 @@ const Page = () => {
     [state],
   );
 
-  const addPost = () => {
-    const title = window.prompt("新しい投稿のタイトルを入力してください");
-    if (!title?.trim()) return;
+  const addPost = (event: FormEvent) => {
+    event.preventDefault();
+    const title = newPostTitle.trim();
+    if (!title) return;
     setState((current) => ({
       ...current,
       posts: [
         {
           id: crypto.randomUUID(),
-          title: title.trim().slice(0, 120),
+          title: title.slice(0, 120),
           published: false,
           author: "Demo Administrator",
         },
         ...current.posts,
       ],
     }));
+    setNewPostTitle("");
   };
 
-  const editPost = (post: DemoPost) => {
-    const title = window.prompt("投稿タイトルを編集", post.title);
-    if (!title?.trim()) return;
+  const updatePostTitle = (postId: string, title: string) => {
     setState((current) => ({
       ...current,
       posts: current.posts.map((item) =>
-        item.id === post.id ? { ...item, title: title.trim().slice(0, 120) } : item,
+        item.id === postId ? { ...item, title: title.slice(0, 120) } : item,
       ),
     }));
   };
 
-  const removePost = (post: DemoPost) => {
-    if (!window.confirm(`「${post.title}」を削除しますか？`)) return;
+  const removePost = (postId: string) => {
     setState((current) => ({
       ...current,
-      posts: current.posts.filter((item) => item.id !== post.id),
+      posts: current.posts.filter((item) => item.id !== postId),
     }));
   };
 
-  const addCategory = () => {
-    const name = window.prompt("カテゴリー名を入力してください");
-    if (!name?.trim()) return;
+  const addCategory = (event: FormEvent) => {
+    event.preventDefault();
+    const name = newCategoryName.trim();
+    if (!name) return;
     setState((current) => ({
       ...current,
       categories: [
         ...current.categories,
-        { id: crypto.randomUUID(), name: name.trim().slice(0, 50) },
+        { id: crypto.randomUUID(), name: name.slice(0, 50) },
       ],
     }));
+    setNewCategoryName("");
   };
 
   const resetDemo = () => {
-    if (!window.confirm("デモデータを初期状態に戻しますか？")) return;
     setState(initialState);
+    setNewPostTitle("");
+    setNewCategoryName("");
+  };
+
+  const selectTab = (nextTab: Tab) => {
+    setTab(nextTab);
+    window.location.hash = nextTab;
   };
 
   if (authLoading || !session || !ready) {
@@ -174,7 +201,8 @@ const Page = () => {
           <button
             key={key}
             type="button"
-            onClick={() => setTab(key)}
+            onClick={() => selectTab(key)}
+            aria-current={tab === key ? "page" : undefined}
             className={`whitespace-nowrap rounded-xl px-4 py-2 text-sm font-bold ${
               tab === key ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700"
             }`}
@@ -202,7 +230,20 @@ const Page = () => {
       )}
 
       {tab === "posts" && (
-        <DemoPanel title="投稿管理" actionLabel="新規投稿" onAction={addPost}>
+        <DemoPanel title="投稿管理">
+          <form onSubmit={addPost} className="flex flex-col gap-2 border-b border-slate-100 pb-4 dark:border-slate-700 sm:flex-row">
+            <input
+              value={newPostTitle}
+              onChange={(event) => setNewPostTitle(event.target.value)}
+              placeholder="新しい投稿タイトル"
+              maxLength={120}
+              required
+              className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm dark:bg-slate-900"
+            />
+            <button type="submit" className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white">
+              投稿を追加
+            </button>
+          </form>
           {state.posts.map((post) => (
             <DemoRow key={post.id}>
               <div className="min-w-0 flex-1">
@@ -212,23 +253,52 @@ const Page = () => {
                   </span>
                   <span className="text-xs text-slate-400">{post.author}</span>
                 </div>
-                <p className="mt-2 truncate font-bold">{post.title}</p>
+                <input
+                  aria-label={`${post.title}のタイトル`}
+                  value={post.title}
+                  onChange={(event) => updatePostTitle(post.id, event.target.value)}
+                  maxLength={120}
+                  className="mt-2 w-full rounded-lg border border-transparent bg-transparent px-2 py-1 font-bold hover:border-slate-300 focus:border-indigo-500 focus:outline-none"
+                />
               </div>
               <button onClick={() => setState((current) => ({ ...current, posts: current.posts.map((item) => item.id === post.id ? { ...item, published: !item.published } : item) }))} className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold">
                 {post.published ? "非公開" : "公開"}
               </button>
-              <button onClick={() => editPost(post)} className="rounded-lg border border-indigo-300 px-3 py-2 text-xs font-bold text-indigo-600">編集</button>
-              <button onClick={() => removePost(post)} className="rounded-lg border border-red-300 px-3 py-2 text-xs font-bold text-red-600">削除</button>
+              <button onClick={() => removePost(post.id)} className="rounded-lg border border-red-300 px-3 py-2 text-xs font-bold text-red-600">削除</button>
             </DemoRow>
           ))}
         </DemoPanel>
       )}
 
       {tab === "categories" && (
-        <DemoPanel title="カテゴリー管理" actionLabel="カテゴリー追加" onAction={addCategory}>
+        <DemoPanel title="カテゴリー管理">
+          <form onSubmit={addCategory} className="flex flex-col gap-2 border-b border-slate-100 pb-4 dark:border-slate-700 sm:flex-row">
+            <input
+              value={newCategoryName}
+              onChange={(event) => setNewCategoryName(event.target.value)}
+              placeholder="新しいカテゴリー名"
+              maxLength={50}
+              required
+              className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm dark:bg-slate-900"
+            />
+            <button type="submit" className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white">
+              カテゴリーを追加
+            </button>
+          </form>
           {state.categories.map((category) => (
             <DemoRow key={category.id}>
-              <p className="flex-1 font-bold">{category.name}</p>
+              <input
+                aria-label={`${category.name}のカテゴリー名`}
+                value={category.name}
+                onChange={(event) => setState((current) => ({
+                  ...current,
+                  categories: current.categories.map((item) =>
+                    item.id === category.id ? { ...item, name: event.target.value.slice(0, 50) } : item,
+                  ),
+                }))}
+                maxLength={50}
+                className="min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-2 py-1 font-bold hover:border-slate-300 focus:border-indigo-500 focus:outline-none"
+              />
               <button
                 onClick={() => setState((current) => ({ ...current, categories: current.categories.filter((item) => item.id !== category.id) }))}
                 className="rounded-lg border border-red-300 px-3 py-2 text-xs font-bold text-red-600"

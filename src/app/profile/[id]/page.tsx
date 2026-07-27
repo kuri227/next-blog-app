@@ -28,6 +28,7 @@ type ProfileUser = {
     createdAt: string;
     _count: { likes: number; comments: number };
   }[];
+  isFollowing?: boolean;
 };
 
 const Page: React.FC = () => {
@@ -37,12 +38,42 @@ const Page: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    fetch(`/api/users/${id}`)
-      .then((r) => r.json())
-      .then((data) => { setProfile(data); setIsLoading(false); });
-  }, [id]);
+    const controller = new AbortController();
+    const loadProfile = async () => {
+      setIsLoading(true);
+      setLoadError("");
+      try {
+        const response = await fetch(`/api/users/${id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          setProfile(null);
+          setLoadError(
+            response.status === 404
+              ? "ユーザーが見つかりません。"
+              : "プロフィールを読み込めませんでした。",
+          );
+          return;
+        }
+        const data = (await response.json()) as ProfileUser;
+        setProfile(data);
+        setIsFollowing(Boolean(data.isFollowing));
+      } catch (error) {
+        if (!(error instanceof Error && error.name === "AbortError")) {
+          setProfile(null);
+          setLoadError("プロフィールを読み込めませんでした。");
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    void loadProfile();
+    return () => controller.abort();
+  }, [id, token]);
 
   const handleFollow = async () => {
     if (!token) return;
@@ -50,7 +81,7 @@ const Page: React.FC = () => {
     const method = isFollowing ? "DELETE" : "POST";
     const res = await fetch(`/api/users/${id}/follow`, {
       method,
-      headers: { Authorization: token },
+      headers: { Authorization: `Bearer ${token}` },
     });
     if (res.ok) {
       setIsFollowing(!isFollowing);
@@ -76,7 +107,14 @@ const Page: React.FC = () => {
   }
 
   if (!profile) {
-    return <div className="py-10 text-center text-red-500">ユーザーが見つかりません</div>;
+    return (
+      <main className="py-20 text-center">
+        <p className="text-slate-500">{loadError || "ユーザーが見つかりません。"}</p>
+        <Link href="/feed" className="mt-5 inline-block rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white">
+          フィードへ戻る
+        </Link>
+      </main>
+    );
   }
 
   const isOwnProfile = dbUser?.id === id;

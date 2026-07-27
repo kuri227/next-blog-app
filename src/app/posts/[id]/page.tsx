@@ -136,6 +136,7 @@ const Page: React.FC = () => {
   const [bookmarked, setBookmarked] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [progress, setProgress] = useState(0);
   const [toc, setToc] = useState<TocItem[]>([]);
   const [tocOpen, setTocOpen] = useState(false);
@@ -150,15 +151,45 @@ const Page: React.FC = () => {
   // ── 投稿・コメント取得 ────────────────────────────────────────
   useEffect(() => {
     if (!id) return;
-    Promise.all([
-      fetch(`/api/posts/${id}`).then((r) => r.json()),
-      fetch(`/api/posts/${id}/comments`).then((r) => r.json()),
-    ]).then(([p, c]) => {
-      setPost(p);
-      setComments(c);
-      setToc(extractToc(p.content));
-      setIsLoading(false);
-    });
+    const controller = new AbortController();
+    const loadPost = async () => {
+      setIsLoading(true);
+      setLoadError("");
+      try {
+        const [postResponse, commentsResponse] = await Promise.all([
+          fetch(`/api/posts/${id}`, { signal: controller.signal }),
+          fetch(`/api/posts/${id}/comments`, { signal: controller.signal }),
+        ]);
+        if (!postResponse.ok) {
+          setPost(null);
+          setComments([]);
+          setLoadError(
+            postResponse.status === 404
+              ? "投稿が見つかりません。"
+              : "投稿を読み込めませんでした。",
+          );
+          return;
+        }
+
+        const loadedPost = (await postResponse.json()) as Post;
+        const loadedComments = commentsResponse.ok
+          ? ((await commentsResponse.json()) as Comment[])
+          : [];
+        setPost(loadedPost);
+        setComments(loadedComments);
+        setToc(extractToc(loadedPost.content));
+      } catch (error) {
+        if (!(error instanceof Error && error.name === "AbortError")) {
+          setPost(null);
+          setComments([]);
+          setLoadError("投稿を読み込めませんでした。");
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    void loadPost();
+    return () => controller.abort();
   }, [id]);
 
   // ── 読了プログレスバー ────────────────────────────────────────
@@ -193,7 +224,7 @@ const Page: React.FC = () => {
       try {
         const res = await fetch(`/api/posts/${post.id}/like`, {
           method: liked ? "DELETE" : "POST",
-          headers: { Authorization: token },
+          headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
           const data = await res.json();
@@ -217,7 +248,7 @@ const Page: React.FC = () => {
     setBookmarked((v) => !v);
     await fetch(`/api/posts/${post.id}/bookmark`, {
       method: bookmarked ? "DELETE" : "POST",
-      headers: { Authorization: token },
+      headers: { Authorization: `Bearer ${token}` },
     });
   }, [token, post, bookmarked]);
 
@@ -227,7 +258,7 @@ const Page: React.FC = () => {
     if (!token || !newComment.trim()) return;
     const res = await fetch(`/api/posts/${post!.id}/comments`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: token },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ content: newComment }),
     });
     if (res.ok) {
@@ -260,7 +291,7 @@ const Page: React.FC = () => {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (response.ok) {
-      router.replace("/");
+      router.replace("/feed");
       router.refresh();
     }
   };
@@ -273,7 +304,16 @@ const Page: React.FC = () => {
       </div>
     );
   }
-  if (!post) return <div className="py-32 text-center text-slate-400">記事が見つかりません</div>;
+  if (!post) {
+    return (
+      <main className="py-32 text-center">
+        <p className="text-slate-500">{loadError || "投稿が見つかりません。"}</p>
+        <Link href="/feed" className="mt-5 inline-block rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white">
+          フィードへ戻る
+        </Link>
+      </main>
+    );
+  }
 
   return (
     <>
@@ -283,9 +323,9 @@ const Page: React.FC = () => {
       <div className="mx-auto flex max-w-screen-xl gap-8 py-8 lg:py-10">
         {/* ── メインコンテンツ ─────────────────────────────── */}
         <div className="min-w-0 flex-1" ref={articleRef}>
-          <Link href="/"
+          <Link href="/feed"
             className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-[var(--text-muted)] hover:text-[var(--text-base)]">
-            <FontAwesomeIcon icon={faChevronLeft} /> 一覧へ
+            <FontAwesomeIcon icon={faChevronLeft} /> フィードへ戻る
           </Link>
 
           <article className="space-y-6">

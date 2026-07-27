@@ -44,7 +44,7 @@ const Page: React.FC = () => {
             return;
           }
           url = "/api/feed/following";
-          headers["Authorization"] = token;
+          headers["Authorization"] = `Bearer ${token}`;
         }
 
         const res = await fetch(url, { cache: "no-store", headers });

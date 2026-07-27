@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/app/_hooks/useAuth";
 
@@ -13,7 +14,8 @@ type Post = {
 };
 
 const Page = () => {
-  const { token } = useAuth();
+  const router = useRouter();
+  const { token, isLoading: authLoading } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
 
   const load = useCallback(async () => {
@@ -26,6 +28,9 @@ const Page = () => {
   }, [token]);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    if (!authLoading && !token) router.replace("/login");
+  }, [authLoading, router, token]);
 
   const remove = async (post: Post) => {
     if (!token || !window.confirm(`「${post.title}」を削除しますか？`)) return;
@@ -35,6 +40,10 @@ const Page = () => {
     });
     if (response.ok) setPosts((items) => items.filter((item) => item.id !== post.id));
   };
+
+  if (authLoading || !token) {
+    return <main className="py-24 text-center text-slate-400">認証情報を確認しています...</main>;
+  }
 
   return (
     <main className="mx-auto max-w-4xl space-y-6 pb-20">

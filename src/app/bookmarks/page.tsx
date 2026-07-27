@@ -23,16 +23,17 @@ type BookmarkedPost = {
 // ブックマーク一覧 (bookmarked post を User テーブル経由で取得する仮実装)
 // 本来は /api/bookmarks など専用APIを作るが、ここでは posts を全件取得してフィルタする
 const Page: React.FC = () => {
-  const { token, dbUser } = useAuth();
+  const { token, dbUser, isLoading: authLoading } = useAuth();
   const [posts, setPosts] = useState<BookmarkedPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!dbUser || !token) { setIsLoading(false); return; }
     // 新設した API からブックマークした投稿のみを取得する
     fetch("/api/posts/bookmarks", { 
       cache: "no-store",
-      headers: { Authorization: token },
+      headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
       .then((data) => { 
@@ -48,7 +49,7 @@ const Page: React.FC = () => {
         setPosts([]);
         setIsLoading(false);
       });
-  }, [dbUser, token]);
+  }, [authLoading, dbUser, token]);
 
   if (!dbUser && !isLoading) {
     return (

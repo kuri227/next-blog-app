@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/_hooks/useAuth";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -23,7 +23,7 @@ const PREDEFINED_INTERESTS = [
 
 const Page: React.FC = () => {
   const router = useRouter();
-  const { token, dbUser, setDbUser } = useAuth();
+  const { token, dbUser, setDbUser, isLoading: authLoading } = useAuth();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [bio, setBio] = useState("");
@@ -31,6 +31,14 @@ const Page: React.FC = () => {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && !token) router.replace("/login");
+  }, [authLoading, router, token]);
+
+  useEffect(() => {
+    if (dbUser?.name) setDisplayName((current) => current || dbUser.name || "");
+  }, [dbUser]);
 
   const toggle = <T extends string>(
     list: T[],
@@ -48,7 +56,7 @@ const Page: React.FC = () => {
     try {
       const res = await fetch("/api/users/me", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: token },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           name: displayName,
           bio,

@@ -50,7 +50,7 @@ const Page: React.FC = () => {
       await fetch(`/api/admin/categories/${id}`, {
         method: "DELETE",
         headers: {
-          Authorization: token || "",
+          Authorization: `Bearer ${token || ""}`,
         },
       });
       await fetchCategories();

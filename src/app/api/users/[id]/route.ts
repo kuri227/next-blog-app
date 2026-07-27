@@ -14,6 +14,9 @@ const getDbUser = async (authHeader: string) => {
 export const GET = async (req: NextRequest, routeParams: RouteParams) => {
   const { id } = await routeParams.params;
   try {
+    const viewer = req.headers.get("Authorization")
+      ? await getDbUser(req.headers.get("Authorization")!)
+      : null;
     const user = await prisma.user.findUnique({
       where: { id },
       select: {
@@ -41,7 +44,14 @@ export const GET = async (req: NextRequest, routeParams: RouteParams) => {
       },
     });
     if (!user) return NextResponse.json({ error: "ユーザーが見つかりません" }, { status: 404 });
-    return NextResponse.json(user);
+    const isFollowing = viewer && viewer.id !== id
+      ? Boolean(await prisma.follow.findUnique({
+          where: {
+            followerId_followingId: { followerId: viewer.id, followingId: id },
+          },
+        }))
+      : false;
+    return NextResponse.json({ ...user, isFollowing });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "プロフィールの取得に失敗しました" }, { status: 500 });
