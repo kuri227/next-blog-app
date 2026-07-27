@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
-import { supabase } from "@/utils/supabase";
+import { getAuthenticatedSupabaseUser } from "@/lib/auth";
 
 export const POST = async (req: NextRequest) => {
   const authHeader = req.headers.get("Authorization");
@@ -8,13 +8,12 @@ export const POST = async (req: NextRequest) => {
     return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
   }
 
-  const { data, error } = await supabase.auth.getUser(authHeader);
-  if (error || !data.user) {
-    console.error("[sync] Supabase getUser failed:", error?.message);
+  const supabaseUser = await getAuthenticatedSupabaseUser(authHeader);
+  if (!supabaseUser) {
+    console.error("[sync] Supabase getUser failed");
     return NextResponse.json({ error: "認証に失敗しました" }, { status: 401 });
   }
 
-  const supabaseUser = data.user;
   const meta = supabaseUser.user_metadata;
   const providers = Array.isArray(supabaseUser.app_metadata?.providers)
     ? supabaseUser.app_metadata.providers

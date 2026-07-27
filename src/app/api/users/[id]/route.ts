@@ -1,13 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
-import { supabase } from "@/utils/supabase";
+import { getAuthenticatedSupabaseUser } from "@/lib/auth";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
 const getDbUser = async (authHeader: string) => {
-  const { data, error } = await supabase.auth.getUser(authHeader);
-  if (error || !data.user) return null;
-  return prisma.user.findUnique({ where: { supabaseId: data.user.id } });
+  const user = await getAuthenticatedSupabaseUser(authHeader);
+  if (!user) return null;
+  return prisma.user.findUnique({ where: { supabaseId: user.id } });
 };
 
 // プロフィール取得

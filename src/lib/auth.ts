@@ -6,15 +6,22 @@ const extractAccessToken = (authorization: string | null) => {
   return authorization.replace(/^Bearer\s+/i, "").trim() || null;
 };
 
-export const getAuthenticatedDbUser = async (authorization: string | null) => {
+export const getAuthenticatedSupabaseUser = async (
+  authorization: string | null,
+) => {
   const accessToken = extractAccessToken(authorization);
   if (!accessToken) return null;
 
   const { data, error } = await supabase.auth.getUser(accessToken);
-  if (error || !data.user) return null;
+  return error ? null : data.user;
+};
+
+export const getAuthenticatedDbUser = async (authorization: string | null) => {
+  const user = await getAuthenticatedSupabaseUser(authorization);
+  if (!user) return null;
 
   return prisma.user.findUnique({
-    where: { supabaseId: data.user.id },
+    where: { supabaseId: user.id },
   });
 };
 

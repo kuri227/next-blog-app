@@ -28,7 +28,7 @@ export const useAuth = () => {
     try {
       const res = await fetch("/api/auth/sync", {
         method: "POST",
-        headers: { Authorization: accessToken },
+        headers: { Authorization: `Bearer ${accessToken}` },
         signal,
       });
       if (res.ok) {
