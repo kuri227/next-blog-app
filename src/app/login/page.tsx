@@ -1,159 +1,116 @@
 "use client";
-import { useState } from "react";
-import { supabase } from "@/utils/supabase";
+
+import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
-import { useRouter } from "next/navigation";
+import { faShieldHalved, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { supabase } from "@/utils/supabase";
 
-const Page: React.FC = () => {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+type LoginMode = "user" | "admin";
+
+const Page = () => {
+  const [loadingMode, setLoadingMode] = useState<LoginMode | null>(null);
   const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isAdminLoading, setIsAdminLoading] = useState(false);
 
-  const handleGitHubLogin = async () => {
-    setIsLoading(true);
+  useEffect(() => {
+    const reason = new URLSearchParams(window.location.search).get("error");
+    if (reason === "admin_required") {
+      setError("このGitHubアカウントには管理者権限がありません。");
+    } else if (reason) {
+      setError("GitHubログインを完了できませんでした。もう一度お試しください。");
+    }
+  }, []);
+
+  const handleGitHubLogin = async (mode: LoginMode) => {
+    setLoadingMode(mode);
     setError("");
-    const { error } = await supabase.auth.signInWithOAuth({
+    localStorage.setItem("techfeed:login-mode", mode);
+
+    const redirectOrigin =
+      process.env.NEXT_PUBLIC_SITE_URL ??
+      (window.location.hostname.endsWith(".vercel.app")
+        ? "https://next-blog-app-drab.vercel.app"
+        : window.location.origin);
+
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "github",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
-    if (error) {
-      setError(error.message);
-      setIsLoading(false);
-    }
-  };
-
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsAdminLoading(true);
-    setError("");
-    setMessage("");
-
-    await supabase.auth.signOut();
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+      options: {
+        redirectTo: `${redirectOrigin}/auth/callback`,
+        scopes: "read:user user:email",
+      },
     });
 
-    if (error) {
-      setError(`ログイン失敗: ${error.message}`);
-      setIsAdminLoading(false);
-    } else {
-      router.replace("/admin");
+    if (oauthError) {
+      localStorage.removeItem("techfeed:login-mode");
+      setError(oauthError.message);
+      setLoadingMode(null);
     }
-  };
-
-  const handlePasswordReset = async () => {
-    if (!email) {
-      setError("パスワードを再設定するメールアドレスを入力してください");
-      return;
-    }
-
-    setError("");
-    setMessage("");
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-
-    if (error) {
-      setError(`再設定メールの送信に失敗しました: ${error.message}`);
-      return;
-    }
-
-    setMessage("パスワード再設定メールを送信しました");
   };
 
   return (
     <main className="flex min-h-[80vh] items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        {/* ロゴ */}
-        <div className="mb-10 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 text-2xl shadow-lg">
-            ⚡
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 text-2xl text-white shadow-lg">
+            TF
           </div>
-          <h1 className="text-2xl font-black text-slate-900">TechFeed にログイン</h1>
-          <p className="mt-2 text-sm text-slate-500">GitHub アカウントで続ける</p>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-white">
+            TechFeedにログイン
+          </h1>
+          <p className="mt-2 text-sm text-slate-500">
+            認証方法はGitHubのみです。パスワードは保存しません。
+          </p>
         </div>
 
         {error && (
-          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
         )}
-        {message && (
-          <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            {message}
-          </div>
-        )}
 
-        {/* GitHub ログイン */}
         <button
-          onClick={handleGitHubLogin}
-          disabled={isLoading}
-          className="flex w-full items-center justify-center gap-3 rounded-2xl bg-slate-900 px-6 py-4 text-base font-bold text-white shadow-lg transition hover:bg-slate-700 disabled:opacity-60"
+          type="button"
+          onClick={() => handleGitHubLogin("user")}
+          disabled={loadingMode !== null}
+          className="flex w-full items-center justify-center gap-3 rounded-2xl bg-slate-900 px-6 py-4 font-bold text-white shadow-lg transition hover:bg-slate-700 disabled:opacity-60"
         >
-          {isLoading ? (
+          {loadingMode === "user" ? (
             <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
           ) : (
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-            </svg>
+            <GitHubIcon />
           )}
-          GitHub でログインする
+          GitHubでログイン
         </button>
 
-        <form onSubmit={handleEmailLogin} className="mt-6 space-y-3">
-          <input
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            autoComplete="email"
-            placeholder="メールアドレス"
-            required
-            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none"
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete="current-password"
-            placeholder="パスワード"
-            required
-            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-indigo-500 focus:outline-none"
-          />
-          <button
-            type="submit"
-            disabled={isAdminLoading}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-slate-900 bg-white px-6 py-3.5 text-sm font-bold text-slate-900 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
-          >
-            {isAdminLoading ? (
-              <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
-            ) : (
-              "メールアドレスでログイン"
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={handlePasswordReset}
-            className="w-full text-center text-xs font-medium text-slate-500 underline hover:text-slate-800"
-          >
-            パスワードを再設定
-          </button>
-        </form>
+        <button
+          type="button"
+          onClick={() => handleGitHubLogin("admin")}
+          disabled={loadingMode !== null}
+          className="mt-3 flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-amber-500 bg-amber-50 px-6 py-3.5 text-sm font-bold text-amber-800 transition hover:bg-amber-100 disabled:opacity-60"
+        >
+          {loadingMode === "admin" ? (
+            <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+          ) : (
+            <FontAwesomeIcon icon={faShieldHalved} />
+          )}
+          管理者モードを体験
+        </button>
 
-        <p className="mt-6 text-center text-xs text-slate-400">
-          ログインすることで
-          <a href="#" className="underline">利用規約</a>及び
-          <a href="#" className="underline">プライバシーポリシー</a>に同意したものとみなします。
+        <p className="mt-3 text-center text-xs leading-relaxed text-slate-500">
+          あなたの管理者アカウントは本番管理画面へ、一般アカウントは安全なデモ管理画面へ移動します。
         </p>
+
+        <div className="mt-5 rounded-xl bg-indigo-50 px-4 py-3 text-center text-xs leading-relaxed text-indigo-700">
+          デモでは投稿・カテゴリー・ユーザー権限・コメント管理を実際に操作できます。
+        </div>
       </div>
     </main>
   );
 };
+
+const GitHubIcon = () => (
+  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.21 11.39.6.11.79-.26.79-.58v-2.23c-3.34.73-4.03-1.42-4.03-1.42-.55-1.39-1.33-1.76-1.33-1.76-1.09-.74.08-.73.08-.73 1.21.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.49 1 .11-.78.42-1.31.76-1.61-2.66-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23A11.5 11.5 0 0 1 12 6.8c1.02 0 2.05.14 3 .4 2.3-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.62-5.48 5.92.43.37.82 1.1.82 2.22v3.3c0 .32.19.69.8.57A12 12 0 0 0 12 0Z" />
+  </svg>
+);
 
 export default Page;

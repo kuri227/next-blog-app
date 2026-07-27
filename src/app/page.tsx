@@ -29,12 +29,33 @@ const Page: React.FC = () => {
   const { session } = useAuth();
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch("/api/posts", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((data: FeedPost[]) => { setPosts(data); setIsLoading(false); });
+    const loadPosts = async () => {
+      try {
+        const response = await fetch("/api/posts", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`投稿APIが${response.status}を返しました`);
+        }
+
+        const data: unknown = await response.json();
+        if (!Array.isArray(data)) {
+          throw new Error("投稿APIの応答形式が不正です");
+        }
+
+        setPosts(data as FeedPost[]);
+      } catch (error) {
+        console.error("投稿一覧の取得に失敗しました", error);
+        setPosts([]);
+        setLoadError("投稿一覧を読み込めませんでした。しばらくしてから再読み込みしてください。");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPosts();
   }, []);
 
   const filtered = posts.filter((p) =>
@@ -66,7 +87,7 @@ const Page: React.FC = () => {
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             {session ? (
               <Link
-                href="/admin/posts/new"
+                href="/posts/new"
                 className="flex items-center gap-2 rounded-2xl bg-indigo-600 px-6 py-3 font-bold text-white shadow-lg shadow-indigo-500/30 transition hover:bg-indigo-500"
               >
                 投稿する <FontAwesomeIcon icon={faArrowRight} />
@@ -102,7 +123,11 @@ const Page: React.FC = () => {
       </div>
 
       {/* ── 投稿一覧 ──────────────────────────────────────── */}
-      {isLoading ? (
+      {loadError ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-8 text-center text-sm font-medium text-red-700">
+          {loadError}
+        </div>
+      ) : isLoading ? (
         <div className="flex justify-center py-20 text-slate-300">
           <FontAwesomeIcon icon={faSpinner} className="animate-spin text-3xl" />
         </div>

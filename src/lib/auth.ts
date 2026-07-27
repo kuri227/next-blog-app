@@ -22,3 +22,8 @@ export const getAdminDbUser = async (authorization: string | null) => {
   const user = await getAuthenticatedDbUser(authorization);
   return user?.role === "ADMIN" ? user : null;
 };
+
+export const getMutableDbUser = async (authorization: string | null) => {
+  const user = await getAuthenticatedDbUser(authorization);
+  return user?.role === "DEMO_ADMIN" ? null : user;
+};

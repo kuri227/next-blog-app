@@ -15,9 +15,13 @@ export const POST = async (req: NextRequest) => {
 
   try {
     const { name }: RequestBody = await req.json();
+    const normalizedName = typeof name === "string" ? name.trim() : "";
+    if (normalizedName.length < 1 || normalizedName.length > 50) {
+      return NextResponse.json({ error: "カテゴリー名は1〜50文字で入力してください" }, { status: 400 });
+    }
     const category: Category = await prisma.category.create({
       data: {
-        name,
+        name: normalizedName,
       },
     });
     return NextResponse.json(category);

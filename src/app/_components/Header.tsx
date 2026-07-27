@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBars, faXmark, faHouse, faUser, faGear,
   faTableList, faTags, faRss, faBookmark, faPenToSquare,
-  faMoon, faSun, faArrowRightFromBracket,
+  faMoon, faSun, faArrowRightFromBracket, faUsers, faComments,
 } from "@fortawesome/free-solid-svg-icons";
 import { twMerge } from "tailwind-merge";
 import { supabase } from "@/utils/supabase";
@@ -32,7 +32,8 @@ const Header: React.FC = () => {
     { href: "/feed", icon: faRss, label: "フィード" },
     ...(session ? [
       { href: "/bookmarks", icon: faBookmark, label: "ブックマーク" },
-      { href: "/admin/posts/new", icon: faPenToSquare, label: "新規投稿" },
+      { href: "/posts/new", icon: faPenToSquare, label: "新規投稿" },
+      { href: "/my-posts", icon: faTableList, label: "自分の投稿" },
     ] : []),
     ...(dbUser?.role === "ADMIN" ? [
       { href: "/admin", icon: faGear, label: "管理画面" },
@@ -130,7 +131,9 @@ const Header: React.FC = () => {
                 <p className="truncate text-sm font-black text-[var(--text-base)]">
                   {dbUser.name ?? "ユーザー"}
                 </p>
-                <p className="truncate text-xs text-[var(--text-muted)]">{dbUser.email}</p>
+                <p className="truncate text-xs text-[var(--text-muted)]">
+                  {dbUser.githubUrl?.replace("https://github.com/", "@") ?? "GitHub user"}
+                </p>
               </div>
             </Link>
           )}
@@ -180,7 +183,7 @@ const Header: React.FC = () => {
                   <FontAwesomeIcon icon={faTags} className="w-5 text-slate-400 group-hover:text-indigo-400" />
                   カテゴリ管理
                 </Link>
-                <Link href="/admin/posts/new" onClick={toggleMenu}
+                <Link href="/posts/new" onClick={toggleMenu}
                   className="group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-[var(--text-muted)] transition-all hover:bg-slate-900 hover:text-white dark:hover:bg-slate-700">
                   <FontAwesomeIcon icon={faPenToSquare} className="w-5 text-slate-400 group-hover:text-indigo-400" />
                   新規記事作成
@@ -189,6 +192,16 @@ const Header: React.FC = () => {
                   className="group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-[var(--text-muted)] transition-all hover:bg-slate-900 hover:text-white dark:hover:bg-slate-700">
                   <FontAwesomeIcon icon={faTags} className="w-5 text-slate-400 group-hover:text-indigo-400" />
                   新規カテゴリ作成
+                </Link>
+                <Link href="/admin/users" onClick={toggleMenu}
+                  className="group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-[var(--text-muted)] transition-all hover:bg-slate-900 hover:text-white dark:hover:bg-slate-700">
+                  <FontAwesomeIcon icon={faUsers} className="w-5 text-slate-400 group-hover:text-indigo-400" />
+                  ユーザー管理
+                </Link>
+                <Link href="/admin/comments" onClick={toggleMenu}
+                  className="group flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-bold text-[var(--text-muted)] transition-all hover:bg-slate-900 hover:text-white dark:hover:bg-slate-700">
+                  <FontAwesomeIcon icon={faComments} className="w-5 text-slate-400 group-hover:text-indigo-400" />
+                  コメント管理
                 </Link>
                 <div className="px-4 pt-3">
                   <div className="rounded-xl border border-[var(--border)] bg-slate-50 p-3 text-[10px] text-[var(--text-muted)] dark:bg-slate-800">

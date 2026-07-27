@@ -36,22 +36,10 @@ const main = async () => {
 
   await pool.query("BEGIN");
   try {
-    const conflictingUser = await pool.query(
-      `select id
-       from public."User"
-       where "supabaseId" = $1 and lower(email) <> $2`,
-      [authUser.id, email],
-    );
-
-    if (conflictingUser.rowCount) {
-      throw new Error("このAuthユーザーIDは別のDBユーザーに紐付いています");
-    }
-
     await pool.query(
       `insert into public."User" (
          id,
          "supabaseId",
-         email,
          name,
          role,
          skills,
@@ -60,14 +48,13 @@ const main = async () => {
          "createdAt",
          "updatedAt"
        )
-       values ($1, $2, $3, 'Administrator', 'ADMIN', '{}', '{}', true, now(), now())
-       on conflict (email) do update
+       values ($1, $2, 'Administrator', 'ADMIN', '{}', '{}', true, now(), now())
+       on conflict ("supabaseId") do update
        set
-         "supabaseId" = excluded."supabaseId",
          role = 'ADMIN',
          "isOnboardingComplete" = true,
          "updatedAt" = now()`,
-      [randomUUID(), authUser.id, authUser.email],
+      [randomUUID(), authUser.id],
     );
 
     await pool.query("COMMIT");

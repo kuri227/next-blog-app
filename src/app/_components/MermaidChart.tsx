@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
+import DOMPurify from "isomorphic-dompurify";
 
 interface Props { code: string; }
 
@@ -15,7 +16,7 @@ const MermaidChart: React.FC<Props> = ({ code }) => {
         mermaid.initialize({
           startOnLoad: false,
           theme: document.documentElement.classList.contains("dark") ? "dark" : "default",
-          securityLevel: "loose",
+          securityLevel: "strict",
         });
         mermaidLoaded = true;
       }
@@ -23,10 +24,16 @@ const MermaidChart: React.FC<Props> = ({ code }) => {
       const id = `mermaid-${Math.random().toString(36).slice(2)}`;
       try {
         const { svg } = await mermaid.render(id, code);
-        ref.current.innerHTML = svg;
+        ref.current.innerHTML = DOMPurify.sanitize(svg, {
+          USE_PROFILES: { svg: true, svgFilters: true },
+        });
       } catch (e) {
         console.error("Mermaid render error:", e);
-        ref.current.innerHTML = `<pre class="text-red-500 text-xs p-3">${code}</pre>`;
+        ref.current.replaceChildren();
+        const errorMessage = document.createElement("pre");
+        errorMessage.className = "text-red-500 text-xs p-3";
+        errorMessage.textContent = "図を表示できませんでした。Mermaidの構文を確認してください。";
+        ref.current.appendChild(errorMessage);
       }
     };
     render();

@@ -24,6 +24,8 @@ export const useRouteGuard = () => {
 
   return {
     isAuthorized:
-      !isLoading && session !== null && dbUser?.role === "ADMIN",
+      !isLoading &&
+      session !== null &&
+      dbUser?.role === "ADMIN",
   };
 };

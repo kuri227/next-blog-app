@@ -41,6 +41,9 @@ drop policy if exists "cover_image_admin_select" on storage.objects;
 drop policy if exists "cover_image_admin_insert" on storage.objects;
 drop policy if exists "cover_image_admin_update" on storage.objects;
 drop policy if exists "cover_image_admin_delete" on storage.objects;
+drop policy if exists "cover_image_authenticated_insert" on storage.objects;
+drop policy if exists "cover_image_owner_update" on storage.objects;
+drop policy if exists "cover_image_owner_delete" on storage.objects;
 
 create policy "cover_image_admin_select"
 on storage.objects
@@ -48,21 +51,42 @@ for select
 to authenticated
 using (bucket_id = 'cover-image' and public.is_admin());
 
-create policy "cover_image_admin_insert"
+create policy "cover_image_authenticated_insert"
 on storage.objects
 for insert
 to authenticated
-with check (bucket_id = 'cover-image' and public.is_admin());
+with check (
+  bucket_id = 'cover-image'
+  and (storage.foldername(name))[1] = (select auth.uid())::text
+);
 
-create policy "cover_image_admin_update"
+create policy "cover_image_owner_update"
 on storage.objects
 for update
 to authenticated
-using (bucket_id = 'cover-image' and public.is_admin())
-with check (bucket_id = 'cover-image' and public.is_admin());
+using (
+  bucket_id = 'cover-image'
+  and (
+    (storage.foldername(name))[1] = (select auth.uid())::text
+    or public.is_admin()
+  )
+)
+with check (
+  bucket_id = 'cover-image'
+  and (
+    (storage.foldername(name))[1] = (select auth.uid())::text
+    or public.is_admin()
+  )
+);
 
-create policy "cover_image_admin_delete"
+create policy "cover_image_owner_delete"
 on storage.objects
 for delete
 to authenticated
-using (bucket_id = 'cover-image' and public.is_admin());
+using (
+  bucket_id = 'cover-image'
+  and (
+    (storage.foldername(name))[1] = (select auth.uid())::text
+    or public.is_admin()
+  )
+);

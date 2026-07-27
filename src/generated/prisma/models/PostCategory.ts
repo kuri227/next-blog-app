@@ -198,6 +198,7 @@ export type PostCategoryOrderByWithRelationInput = {
 
 export type PostCategoryWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  postId_categoryId?: Prisma.PostCategoryPostIdCategoryIdCompoundUniqueInput
   AND?: Prisma.PostCategoryWhereInput | Prisma.PostCategoryWhereInput[]
   OR?: Prisma.PostCategoryWhereInput[]
   NOT?: Prisma.PostCategoryWhereInput | Prisma.PostCategoryWhereInput[]
@@ -207,7 +208,7 @@ export type PostCategoryWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"PostCategory"> | Date | string
   category?: Prisma.XOR<Prisma.CategoryScalarRelationFilter, Prisma.CategoryWhereInput>
   post?: Prisma.XOR<Prisma.PostScalarRelationFilter, Prisma.PostWhereInput>
-}, "id">
+}, "id" | "postId_categoryId">
 
 export type PostCategoryOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -293,6 +294,11 @@ export type PostCategoryListRelationFilter = {
 
 export type PostCategoryOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
+}
+
+export type PostCategoryPostIdCategoryIdCompoundUniqueInput = {
+  postId: string
+  categoryId: string
 }
 
 export type PostCategoryCountOrderByAggregateInput = {

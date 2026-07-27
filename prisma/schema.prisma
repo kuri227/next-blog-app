@@ -16,6 +16,7 @@ datasource db {
 // ユーザーロール
 enum UserRole {
   ADMIN
+  DEMO_ADMIN
   USER
 }
 
@@ -29,7 +30,6 @@ enum PostType {
 model User {
   id                   String   @id @default(uuid())
   supabaseId           String   @unique        // Supabase の auth.users.id
-  email                String   @unique
   name                 String?
   avatarUrl            String?                 // GitHub アバター URL
   role                 UserRole @default(USER)
@@ -76,6 +76,7 @@ model Post {
   bookmarks     Bookmark[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  @@index([authorId, createdAt])
 }
 
 // カテゴリテーブル
@@ -96,6 +97,7 @@ model PostCategory {
   updatedAt  DateTime @updatedAt
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   post       Post     @relation(fields: [postId],     references: [id], onDelete: Cascade)
+  @@unique([postId, categoryId])
 }
 
 // コメントテーブル
@@ -107,6 +109,7 @@ model Comment {
   post      Post     @relation(fields: [postId],    references: [id], onDelete: Cascade)
   author    User     @relation(fields: [authorId],  references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  @@index([authorId, createdAt])
 }
 
 // いいねテーブル（ユーザー × 投稿の複合主キー）

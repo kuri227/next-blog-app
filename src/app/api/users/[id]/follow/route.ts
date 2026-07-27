@@ -1,22 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse, NextRequest } from "next/server";
-import { supabase } from "@/utils/supabase";
+import { getMutableDbUser } from "@/lib/auth";
 
 type RouteParams = { params: Promise<{ id: string }> };
-
-const getDbUser = async (authHeader: string) => {
-  const { data, error } = await supabase.auth.getUser(authHeader);
-  if (error || !data.user) return null;
-  return prisma.user.findUnique({ where: { supabaseId: data.user.id } });
-};
 
 // フォロー
 export const POST = async (req: NextRequest, routeParams: RouteParams) => {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
 
-  const dbUser = await getDbUser(authHeader);
-  if (!dbUser) return NextResponse.json({ error: "認証に失敗しました" }, { status: 401 });
+  const dbUser = await getMutableDbUser(authHeader);
+  if (!dbUser) return NextResponse.json({ error: "デモ閲覧モードでは変更できません" }, { status: 403 });
 
   const { id: followingId } = await routeParams.params;
 
@@ -39,8 +33,8 @@ export const DELETE = async (req: NextRequest, routeParams: RouteParams) => {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return NextResponse.json({ error: "認証が必要です" }, { status: 401 });
 
-  const dbUser = await getDbUser(authHeader);
-  if (!dbUser) return NextResponse.json({ error: "認証に失敗しました" }, { status: 401 });
+  const dbUser = await getMutableDbUser(authHeader);
+  if (!dbUser) return NextResponse.json({ error: "デモ閲覧モードでは変更できません" }, { status: 403 });
 
   const { id: followingId } = await routeParams.params;
 

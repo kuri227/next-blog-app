@@ -16,12 +16,20 @@ export const POST = async (req: NextRequest) => {
 
   const supabaseUser = data.user;
   const meta = supabaseUser.user_metadata;
+  const providers = Array.isArray(supabaseUser.app_metadata?.providers)
+    ? supabaseUser.app_metadata.providers
+    : [supabaseUser.app_metadata?.provider];
+  if (!providers.includes("github")) {
+    return NextResponse.json(
+      { error: "GitHub OAuthでログインしてください" },
+      { status: 403 },
+    );
+  }
 
   try {
     const user = await prisma.user.upsert({
       where: { supabaseId: supabaseUser.id },
       update: {
-        email: supabaseUser.email ?? "",
         name: meta?.full_name ?? meta?.user_name ?? null,
         avatarUrl: meta?.avatar_url ?? null,
         githubUrl: meta?.user_name
@@ -30,7 +38,6 @@ export const POST = async (req: NextRequest) => {
       },
       create: {
         supabaseId: supabaseUser.id,
-        email: supabaseUser.email ?? "",
         name: meta?.full_name ?? meta?.user_name ?? null,
         avatarUrl: meta?.avatar_url ?? null,
         githubUrl: meta?.user_name
@@ -53,7 +60,7 @@ export const POST = async (req: NextRequest) => {
       console.error("[sync] Unknown error:", JSON.stringify(err));
     }
     return NextResponse.json(
-      { error: "ユーザー同期に失敗しました", detail: err instanceof Error ? err.message : String(err) },
+      { error: "ユーザー同期に失敗しました" },
       { status: 500 },
     );
   }

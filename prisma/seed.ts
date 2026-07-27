@@ -31,7 +31,6 @@ const main = async () => {
   const demoUser = await prisma.user.create({
     data: {
       supabaseId: "seed-demo-user-001",
-      email: "demo@techsns.dev",
       name: "Kuri227",
       avatarUrl: "https://avatars.githubusercontent.com/u/583231?v=4",
       githubUrl: "https://github.com/kuri227",
@@ -46,7 +45,6 @@ const main = async () => {
   const demoUser2 = await prisma.user.create({
     data: {
       supabaseId: "seed-demo-user-002",
-      email: "alice@techsns.dev",
       name: "Alice Dev",
       avatarUrl: "https://avatars.githubusercontent.com/u/1?v=4",
       githubUrl: "https://github.com/alice",

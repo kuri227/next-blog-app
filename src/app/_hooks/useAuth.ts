@@ -6,11 +6,10 @@ import { useRouter, usePathname } from "next/navigation";
 export type DbUser = {
   id: string;
   supabaseId: string;
-  email: string;
   name: string | null;
   avatarUrl: string | null;
   githubUrl: string | null;
-  role: "ADMIN" | "USER";
+  role: "ADMIN" | "DEMO_ADMIN" | "USER";
   bio: string | null;
   skills: string[];
   techInterests: string[];

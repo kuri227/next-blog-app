@@ -41,9 +41,13 @@ export const PUT = async (req: NextRequest, routeParams: RouteParams) => {
   try {
     const { id } = await routeParams.params;
     const { name }: RequestBody = await req.json();
+    const normalizedName = typeof name === "string" ? name.trim() : "";
+    if (normalizedName.length < 1 || normalizedName.length > 50) {
+      return NextResponse.json({ error: "カテゴリー名は1〜50文字で入力してください" }, { status: 400 });
+    }
     const category: Category = await prisma.category.update({
       where: { id },
-      data: { name },
+      data: { name: normalizedName },
     });
     return NextResponse.json(category);
   } catch (error) {

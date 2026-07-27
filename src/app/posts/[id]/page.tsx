@@ -2,7 +2,7 @@
 import {
   useState, useEffect, useOptimistic, useTransition, useRef, useCallback,
 } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import ReactMarkdown from "react-markdown";
@@ -17,6 +17,7 @@ import {
   faSpinner, faCalendarDays, faTags, faChevronLeft, faHeart,
   faBookmark, faUser, faArrowUpRightFromSquare, faShare,
   faCopy, faCheck, faListUl,
+  faPenToSquare, faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import dayjs from "dayjs";
 import { twMerge } from "tailwind-merge";
@@ -26,6 +27,7 @@ const bucketName = "cover-image";
 // ── 型定義 ─────────────────────────────────────────────────────
 type Post = {
   id: string; title: string; content: string;
+  authorId: string;
   postType: "PROJECT" | "KNOWLEDGE";
   coverImageKey: string | null;
   repoUrl: string | null; demoUrl: string | null;
@@ -125,6 +127,7 @@ const CustomBlockquote = ({ children }: { children?: React.ReactNode }) => {
 // ── メインページ ──────────────────────────────────────────────
 const Page: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const { dbUser, token } = useAuth();
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -243,6 +246,22 @@ const Page: React.FC = () => {
       await navigator.clipboard.writeText(url);
       setShareMsg("URLをコピーしました！");
       setTimeout(() => setShareMsg(""), 2000);
+    }
+  };
+
+  const canManagePost =
+    Boolean(dbUser && post) &&
+    (dbUser!.id === post!.authorId || dbUser!.role === "ADMIN");
+
+  const handleDeletePost = async () => {
+    if (!token || !post || !window.confirm("この投稿を削除しますか？")) return;
+    const response = await fetch(`/api/posts/${post.id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (response.ok) {
+      router.replace("/");
+      router.refresh();
     }
   };
 
@@ -415,6 +434,23 @@ const Page: React.FC = () => {
                 <FontAwesomeIcon icon={faBookmark} />
                 {bookmarked ? "保存済み" : "ブックマーク"}
               </button>
+              {canManagePost && (
+                <>
+                  <Link
+                    href={`/posts/${post.id}/edit`}
+                    className="ml-auto flex items-center gap-2 rounded-xl border border-indigo-300 px-4 py-2 text-sm font-bold text-indigo-600"
+                  >
+                    <FontAwesomeIcon icon={faPenToSquare} /> 編集
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleDeletePost}
+                    className="flex items-center gap-2 rounded-xl border border-red-300 px-4 py-2 text-sm font-bold text-red-600"
+                  >
+                    <FontAwesomeIcon icon={faTrash} /> 削除
+                  </button>
+                </>
+              )}
             </div>
 
             {/* コメント */}

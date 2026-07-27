@@ -1,40 +1,68 @@
 "use client";
-import { useEffect } from "react";
+
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/utils/supabase";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { supabase } from "@/utils/supabase";
 
-// GitHub OAuth (PKCE フロー) のコールバック処理
-// Supabase は ?code=xxx を URL に渡してくるので exchangeCodeForSession で処理する
-const Page: React.FC = () => {
+type SyncedUser = {
+  role: "ADMIN" | "DEMO_ADMIN" | "USER";
+  isOnboardingComplete: boolean;
+};
+
+const Page = () => {
   const router = useRouter();
+  const started = useRef(false);
 
   useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+
     const handleCallback = async () => {
+      const mode = localStorage.getItem("techfeed:login-mode") ?? "user";
+      localStorage.removeItem("techfeed:login-mode");
       const code = new URLSearchParams(window.location.search).get("code");
 
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error) {
-          console.error("OAuth callback error:", error.message);
-          router.replace("/login?error=" + encodeURIComponent(error.message));
-          return;
-        }
+      if (!code) {
+        router.replace("/login?error=oauth_callback");
+        return;
       }
 
-      // セッション確立後 useAuth が syncUser → isOnboardingComplete チェックを行う
-      router.replace("/");
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      if (error || !data.session) {
+        console.error("OAuth callback error:", error?.message);
+        router.replace("/login?error=oauth_callback");
+        return;
+      }
+
+      const response = await fetch("/api/auth/sync", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${data.session.access_token}` },
+      });
+      if (!response.ok) {
+        await supabase.auth.signOut();
+        router.replace("/login?error=user_sync");
+        return;
+      }
+
+      const user: SyncedUser = await response.json();
+      if (mode === "admin") {
+        router.replace(user.role === "ADMIN" ? "/admin" : "/admin-demo");
+        return;
+      }
+
+      router.replace(user.isOnboardingComplete ? "/feed" : "/onboarding");
     };
 
-    handleCallback();
+    void handleCallback();
   }, [router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="flex items-center gap-3 text-slate-500">
         <FontAwesomeIcon icon={faSpinner} className="animate-spin text-2xl" />
-        <span className="font-medium">ログイン処理中...</span>
+        <span className="font-medium">GitHub認証を確認しています...</span>
       </div>
     </div>
   );

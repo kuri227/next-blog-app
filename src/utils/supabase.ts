@@ -6,6 +6,10 @@ export const supabase = createClient(
   {
     auth: {
       flowType: "pkce",
+      // OAuth/recovery callback pages exchange the code explicitly.
+      // Disabling automatic URL detection prevents the same PKCE code from
+      // being consumed twice.
+      detectSessionInUrl: false,
     },
   },
 );

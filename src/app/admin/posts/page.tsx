@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useAuth } from "@/app/_hooks/useAuth";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -19,6 +19,8 @@ type Post = {
   id: string;
   title: string;
   createdAt: string;
+  published: boolean;
+  author: { id: string; name: string | null };
   categories: { category: { id: string; name: string } }[];
 };
 
@@ -29,28 +31,32 @@ const Page: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const { token } = useAuth();
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/posts", { cache: "no-store" });
+      if (!token) return;
+      const res = await fetch("/api/admin/posts", {
+        cache: "no-store",
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (res.ok) setPosts(await res.json());
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [fetchPosts]);
 
   const handleDelete = async (id: string, title: string) => {
     if (!window.confirm(`「${title}」を削除しますか？`)) return;
     setIsDeleting(true);
     try {
-      await fetch(`/api/admin/posts/${id}`, {
+      await fetch(`/api/posts/${id}`, {
         method: "DELETE",
         headers: {
-          Authorization: token || "",
+          Authorization: `Bearer ${token || ""}`,
         },
       });
       await fetchPosts();
@@ -103,7 +109,7 @@ const Page: React.FC = () => {
             />
           </div>
           <Link
-            href="/admin/posts/new"
+            href="/posts/new"
             className="inline-flex items-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold whitespace-nowrap text-white shadow-sm hover:bg-indigo-700"
           >
             <FontAwesomeIcon icon={faPlus} className="mr-2" />
@@ -154,7 +160,7 @@ const Page: React.FC = () => {
                   <td className="px-6 py-4 text-center">
                     <div className="flex justify-center gap-1">
                       <Link
-                        href={`/admin/posts/${post.id}`}
+                        href={`/posts/${post.id}/edit`}
                         className="p-2 text-slate-400 transition-all hover:text-indigo-600"
                       >
                         <FontAwesomeIcon icon={faPencil} />

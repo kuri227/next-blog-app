@@ -12,7 +12,7 @@ const AdminLayout = ({ children }: Props) => {
   if (!isAuthorized) {
     return null;
   }
-  return <>{children}</>;
+  return children;
 };
 
 export default AdminLayout;
